@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16.6
+    container_name: nexus-tracker
+    ports:
+      - '5492:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=nexus-tracker-pw
+    volumes:
+      - postgres-nexus-data:/var/lib/postgresql/data
+    networks:
+      - nexus-tracker
+volumes:
+  postgres-nexus-data:
+networks:
+  nexus-tracker:
+    driver: bridge

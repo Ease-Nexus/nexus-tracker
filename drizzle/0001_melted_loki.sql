@@ -1,0 +1,1 @@
+ALTER TABLE "badges" ADD CONSTRAINT "badges_value_unique" UNIQUE("value");

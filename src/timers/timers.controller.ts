@@ -8,7 +8,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { TimersService } from './timers.service';
-import { timerStatusEnum } from 'src/main/config/database/schema';
+import { TimerStatus } from './domain';
 
 @Controller('timers')
 export class TimersController {
@@ -27,7 +27,7 @@ export class TimersController {
   @Put(':id')
   async updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: (typeof timerStatusEnum.enumValues)[number] },
+    @Body() body: { status: TimerStatus },
   ) {
     return await this.timersService.update(id, body.status);
   }

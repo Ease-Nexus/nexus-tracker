@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   pgTable,
   boolean,
@@ -8,6 +9,7 @@ import {
   timestamp,
   pgEnum,
 } from 'drizzle-orm/pg-core';
+import { timerStatuses } from 'src/timers/domain';
 
 export const badges = pgTable('badges', {
   id: uuid('id').notNull().primaryKey().defaultRandom(),
@@ -16,19 +18,23 @@ export const badges = pgTable('badges', {
   description: text('description').notNull(),
 });
 
-export const timerStatusEnum = pgEnum('timer_status', [
-  'running',
-  'paused',
-  'stopped',
-]);
+export const timerStatusEnum = pgEnum('timer_status', timerStatuses);
 
-export const timers = pgTable('timers', {
+export const timersTable = pgTable('timers', {
   id: uuid('id').notNull().primaryKey().defaultRandom(),
+  duration: integer('duration').notNull(),
+  remaining: integer('remaining'),
+  status: timerStatusEnum('status').notNull().default('CREATED'),
+  startedAt: timestamp('startedAt', { mode: 'date' }),
+  endAt: timestamp('endAt', { mode: 'date' }),
   badgeId: uuid('badgeId')
     .references(() => badges.id, {})
     .notNull(),
-  durationMinutes: integer('durationMinutes').notNull(),
-  startTime: timestamp('startTime', { mode: 'date' }).notNull(),
-  elapsedSeconds: integer('elapsedSeconds').notNull().default(0),
-  status: timerStatusEnum('status').notNull().default('running'),
 });
+
+export const timersRelations = relations(timersTable, ({ one }) => ({
+  badge: one(badges, {
+    fields: [timersTable.badgeId],
+    references: [badges.id],
+  }),
+}));

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1754952890233,
-      "tag": "0000_supreme_doctor_strange",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1754956771139,
-      "tag": "0001_melted_loki",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1754956819745,
-      "tag": "0002_outgoing_nico_minoru",
+      "when": 1754971116973,
+      "tag": "0000_serious_ken_ellis",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "id": "92269de6-c92b-44f7-bcc6-1701b038b9fe",
+  "id": "db409da8-b1ec-413f-913f-f5b186198ba8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -15,8 +15,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "value": {
-          "name": "value",
+        "badgeValue": {
+          "name": "badgeValue",
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
@@ -38,7 +38,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "badges_badgeValue_unique": {
+          "name": "badges_badgeValue_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "badgeValue"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -54,30 +62,17 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "badgeId": {
-          "name": "badgeId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "durationMinutes": {
-          "name": "durationMinutes",
+        "duration": {
+          "name": "duration",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "startTime": {
-          "name": "startTime",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "elapsedSeconds": {
-          "name": "elapsedSeconds",
+        "remaining": {
+          "name": "remaining",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": false
         },
         "status": {
           "name": "status",
@@ -85,7 +80,25 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'running'"
+          "default": "'CREATED'"
+        },
+        "startedAt": {
+          "name": "startedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "endAt": {
+          "name": "endAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "badgeId": {
+          "name": "badgeId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -116,9 +129,11 @@
       "name": "timer_status",
       "schema": "public",
       "values": [
-        "running",
-        "paused",
-        "stopped"
+        "CREATED",
+        "RUNNING",
+        "PAUSED",
+        "COMPLETED",
+        "CANCELED"
       ]
     }
   },

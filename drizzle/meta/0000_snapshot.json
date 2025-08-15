@@ -1,5 +1,5 @@
 {
-  "id": "db409da8-b1ec-413f-913f-f5b186198ba8",
+  "id": "53dcaec3-b41e-4b6d-9ffb-1a9d11055954",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -68,11 +68,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "remaining": {
-          "name": "remaining",
+        "elapsed": {
+          "name": "elapsed",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
         },
         "status": {
           "name": "status",
@@ -84,15 +85,22 @@
         },
         "startedAt": {
           "name": "startedAt",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
-        "endAt": {
-          "name": "endAt",
-          "type": "timestamp",
+        "lastStartedAt": {
+          "name": "lastStartedAt",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "history": {
+          "name": "history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "badgeId": {
           "name": "badgeId",

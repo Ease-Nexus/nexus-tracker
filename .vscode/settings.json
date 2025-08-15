@@ -6,5 +6,5 @@
     ],
     "[typescript]": {
         "editor.formatOnSaveMode": "file"
-    }
+    },
 }

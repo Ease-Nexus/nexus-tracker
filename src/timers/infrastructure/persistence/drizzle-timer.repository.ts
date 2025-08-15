@@ -1,28 +1,42 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { type DrizzleDatabase } from 'src/main/config';
-import { timersTable } from 'src/main/config/database/schema';
+import { tableBadges, timersTable } from 'src/main/config/database/schema';
 import { DRIZZLE } from 'src/shared/infrastructure';
-import { Timer } from 'src/timers/domain';
+import { Badge, Timer, TimerStatus } from 'src/timers/domain';
 
 @Injectable()
 export class DrizzleTimerRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDatabase) {}
 
-  async findAll(): Promise<Timer[]> {
-    const rows = await this.db.select().from(timersTable).execute();
+  async getByStatus(status: TimerStatus): Promise<Timer[]> {
+    const rows = await this.db
+      .select()
+      .from(timersTable)
+      .innerJoin(tableBadges, eq(timersTable.badgeId, tableBadges.id))
+      .where(eq(timersTable.status, status))
+      .execute();
 
-    return rows.map((row) =>
+    return rows.map(({ badges, timers }) =>
       Timer.create(
         {
-          badgeId: row.badgeId,
-          duration: row.duration,
-          remaining: row.remaining ?? 0,
-          status: row.status,
-          startedAt: row.startedAt ?? undefined,
-          endAt: row.endAt ?? undefined,
+          badgeId: badges.id,
+          badge: Badge.create(
+            {
+              badgeValue: badges.badgeValue,
+              description: badges.description,
+              enabled: badges.enabled,
+            },
+            badges.id,
+          ),
+          duration: timers.duration,
+          elapsed: timers.elapsed,
+          history: timers.history,
+          status: timers.status,
+          startedAt: timers.startedAt ?? undefined,
+          lastStartedAt: timers.lastStartedAt ?? undefined,
         },
-        row.id,
+        timers.id,
       ),
     );
   }
@@ -31,25 +45,31 @@ export class DrizzleTimerRepository {
     const [row] = await this.db
       .select()
       .from(timersTable)
+      .innerJoin(tableBadges, eq(timersTable.badgeId, tableBadges.id))
       .where(eq(timersTable.id, timerId))
       .execute();
 
-    if (!row) {
-      throw new Error('Timer not found');
-    }
-
-    const { id, badgeId, duration, remaining, status, startedAt, endAt } = row;
+    const { badges, timers } = row;
 
     return Timer.create(
       {
-        badgeId,
-        duration,
-        remaining: remaining ?? 0,
-        status,
-        startedAt: startedAt ?? undefined,
-        endAt: endAt ?? undefined,
+        badgeId: badges.id,
+        badge: Badge.create(
+          {
+            badgeValue: badges.badgeValue,
+            description: badges.description,
+            enabled: badges.enabled,
+          },
+          badges.id,
+        ),
+        duration: timers.duration,
+        elapsed: timers.elapsed,
+        history: timers.history,
+        status: timers.status,
+        startedAt: timers.startedAt ?? undefined,
+        lastStartedAt: timers.lastStartedAt ?? undefined,
       },
-      id,
+      timers.id,
     );
   }
 
@@ -60,10 +80,10 @@ export class DrizzleTimerRepository {
         id: timer.id,
         badgeId: timer.badgeId,
         duration: timer.duration,
-        remaining: timer.remaining,
+        elapsed: timer.elapsed,
         status: timer.status,
         startedAt: timer.startedAt,
-        endAt: timer.endAt,
+        lastStartedAt: timer.lastStartedAt,
       })
       .execute();
   }
@@ -74,13 +94,63 @@ export class DrizzleTimerRepository {
       .set({
         badgeId: timer.badgeId,
         duration: timer.duration,
-        remaining: timer.remaining,
+        elapsed: timer.elapsed,
         status: timer.status,
         startedAt: timer.startedAt,
-        endAt: timer.endAt,
+        lastStartedAt: timer.lastStartedAt,
+        history: timer.history,
       })
       .where(eq(timersTable.id, timer.id))
       .execute();
+  }
+
+  private caseForColumn(column: keyof Timer['props'], timers: Timer[]) {
+    return sql`
+      CASE ${timersTable.id}
+        ${sql.raw(
+          timers
+            .map((t) => {
+              const value = t[column];
+
+              if (column === 'history') {
+                return `WHEN '${t.id}' THEN '${`${JSON.stringify(value)}`}'::jsonb`;
+              }
+              if (value instanceof Date) {
+                return `WHEN '${t.id}' THEN '${value.toISOString()}'`;
+              }
+              if (value === undefined || value === null) {
+                return `WHEN '${t.id}' THEN NULL`;
+              }
+              return `WHEN '${t.id}' THEN '${value as string}'`;
+            })
+            .join(' '),
+        )}
+        ELSE ${timersTable[column]}
+      END
+    `;
+  }
+
+  async bulkUpdate(timers: Timer[]) {
+    if (timers.length === 0) {
+      return;
+    }
+    const ids = timers.map((t) => t.id);
+
+    const result = await this.db
+      .update(timersTable)
+      .set({
+        badgeId: this.caseForColumn('badgeId', timers),
+        duration: this.caseForColumn('duration', timers),
+        elapsed: this.caseForColumn('elapsed', timers),
+        status: this.caseForColumn('status', timers),
+        startedAt: this.caseForColumn('startedAt', timers),
+        lastStartedAt: this.caseForColumn('lastStartedAt', timers),
+        history: this.caseForColumn('history', timers),
+      })
+      .where(inArray(timersTable.id, ids))
+      .execute();
+
+    console.log({ result });
   }
 
   async delete(id: string): Promise<void> {

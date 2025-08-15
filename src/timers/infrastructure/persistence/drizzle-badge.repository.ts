@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { type DrizzleDatabase } from 'src/main/config';
-import { badges } from 'src/main/config/database/schema';
+import { tableBadges } from 'src/main/config/database/schema';
 import { DRIZZLE } from 'src/shared/infrastructure';
 import { Badge } from 'src/timers/domain';
 
@@ -9,15 +9,15 @@ import { Badge } from 'src/timers/domain';
 export class DrizzleBadgeRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDatabase) {}
 
-  async getByValue(value: string): Promise<Badge> {
+  async getByValue(value: string): Promise<Badge | undefined> {
     const [row] = await this.db
       .select()
-      .from(badges)
-      .where(eq(badges.badgeValue, value))
+      .from(tableBadges)
+      .where(eq(tableBadges.badgeValue, value))
       .execute();
 
     if (!row) {
-      throw new Error('Badge not found');
+      return;
     }
 
     const { id, badgeValue, enabled, description } = row;

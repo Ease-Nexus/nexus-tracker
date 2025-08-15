@@ -1,54 +1,166 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import {
   DrizzleBadgeRepository,
   DrizzleTimerRepository,
   InfraSimbles,
+  TimerGateway,
 } from './infrastructure';
-import { Timer, TimerStatus } from './domain';
+import { Timer } from './domain';
+
+const TICK_MS = 500; // frequência de cálculo/WS
+const FLUSH_MS = 500; // frequência mínima de persistência
 
 @Injectable()
-export class TimersService {
+export class TimersService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(TimersService.name);
+
+  private running = new Map<string, Timer>();
+
+  private lastFlushedAt = new Map<string, number>();
+
+  private loop?: NodeJS.Timeout;
+
   constructor(
     @Inject(InfraSimbles.timerRepository)
     private readonly timerRepository: DrizzleTimerRepository,
     @Inject(InfraSimbles.badgeRepository)
     private readonly badgeRepository: DrizzleBadgeRepository,
+    private readonly ws: TimerGateway,
   ) {}
-  async findAll() {
-    return await this.timerRepository.findAll();
+
+  // Considera bloco aberto (RUNNING) para medir elapsed “ao vivo”
+
+  private async tick() {
+    if (this.running.size === 0) return;
+
+    const now = new Date();
+    const toFlush: Timer[] = [];
+
+    for (const t of this.running.values()) {
+      // Se passou do tempo -> finalizar agora (negativa se necessário)
+
+      t.updateLive(now);
+
+      if (t.isCompleted()) {
+        t.complete(); // fecha bloco + complete()
+        toFlush.push(t);
+        this.running.delete(t.id);
+        this.ws.completed(t);
+        continue;
+      }
+
+      console.log(t);
+      // Emite atualização para o front
+      this.ws.tick(t);
+
+      // Persistência periódica (mesmo sem mudança de campos “visíveis”):
+      // isso garante durabilidade de um bloco aberto (já que o start do bloco foi salvo).
+      const last = this.lastFlushedAt.get(t.id) ?? 0;
+      if (now.getTime() - last >= FLUSH_MS) {
+        // Opcional: atualizar apenas campos voláteis (ex.: updatedAt)
+        // Aqui salvamos o estado atual para “forçar” o heartbeat persistido.
+        toFlush.push(t);
+        this.lastFlushedAt.set(t.id, now.getTime());
+      }
+    }
+
+    if (toFlush.length) {
+      await this.timerRepository.bulkUpdate(toFlush);
+    }
   }
 
-  async create(badge: string, durationMinutes: number, started?: boolean) {
-    const badgeResult = await this.badgeRepository.getByValue(badge);
+  async onModuleInit() {
+    const recovering = await this.timerRepository.getByStatus('RUNNING');
 
-    return await this.timerRepository.create(
-      Timer.createNew(badgeResult.id, durationMinutes, started),
+    for (const timer of recovering) {
+      if (timer.isCompleted()) {
+        timer.complete();
+
+        await this.timerRepository.update(timer);
+        this.ws.completed(timer);
+      } else {
+        this.running.set(timer.id, timer);
+        this.ws.resumed(timer);
+      }
+
+      this.lastFlushedAt.set(timer.id, Date.now());
+    }
+
+    this.loop = setInterval(() => void this.tick(), TICK_MS);
+    this.logger.log(
+      `Timer loop started: tick=${TICK_MS}ms flush>=${FLUSH_MS}ms`,
     );
   }
 
-  async update(id: string, status: TimerStatus) {
-    const timer = await this.timerRepository.getById(id);
-
-    const validStatuses: TimerStatus[] = ['RUNNING', 'PAUSED', 'CANCELED'];
-    if (!validStatuses.includes(status)) {
-      throw new Error('Invalid status');
-    }
-
-    switch (status) {
-      case 'PAUSED':
-        timer.pause();
-        break;
-      case 'CANCELED':
-        timer.cancel();
-        break;
-      default:
-        timer.start();
-    }
-
-    await this.timerRepository.update(timer);
+  onModuleDestroy() {
+    if (this.loop) clearInterval(this.loop);
+    this.logger.log('Timer loop stopped');
   }
 
-  async delete(id: string) {
-    await this.timerRepository.delete(id);
+  async getRunningTimers() {
+    return await this.timerRepository.getByStatus('RUNNING');
+  }
+
+  async create(
+    badgeId: string,
+    durationMinutes: number,
+    startImmediately?: boolean,
+  ) {
+    const badge = await this.badgeRepository.getByValue(badgeId);
+
+    if (!badge) {
+      throw new NotFoundException('Badge not found');
+    }
+
+    const timer = Timer.createNew(badge, durationMinutes);
+
+    await this.timerRepository.create(timer);
+
+    if (startImmediately) {
+      await this.startTimer(timer.id);
+    }
+  }
+
+  async startTimer(timerId: string) {
+    const timer = await this.timerRepository.getById(timerId);
+
+    timer.start();
+
+    await this.timerRepository.update(timer);
+    this.running.set(timer.id, timer);
+    this.lastFlushedAt.set(timer.id, Date.now());
+    this.ws.started(timer);
+  }
+
+  async pauseTimer(id: string) {
+    const timer = await this.timerRepository.getById(id);
+
+    timer.pause();
+
+    await this.timerRepository.update(timer);
+    this.running.delete(timer.id);
+    this.ws.paused(timer);
+  }
+
+  async completeTimer(timerId: string) {
+    const timer = await this.timerRepository.getById(timerId);
+
+    if (!timer) {
+      throw new NotFoundException('Timer not found');
+    }
+
+    timer.complete();
+
+    await this.timerRepository.update(timer);
+
+    this.running.delete(timer.id);
+    this.ws.completed(timer);
   }
 }

@@ -1,16 +1,28 @@
 import { Entity } from 'src/shared/domain/entity';
 import { TimerStatus } from './timer-status.enum';
+import { BadRequestException, Logger } from '@nestjs/common';
+import { Badge } from './badge.entity';
+
+export interface TimerHistoryEntry {
+  start: Date;
+  end?: Date;
+  elapsed: number;
+}
 
 export interface TimerProps {
   badgeId: string;
+  badge: Badge;
   duration: number;
-  remaining: number;
+  elapsed: number;
+  remaining?: number;
   status: TimerStatus;
   startedAt?: Date;
-  endAt?: Date;
+  lastStartedAt?: Date;
+  history: TimerHistoryEntry[];
 }
 
 export class Timer extends Entity<TimerProps> {
+  logger = new Logger(Timer.name);
   private constructor(props: TimerProps, id?: string) {
     super(props, id);
   }
@@ -19,11 +31,19 @@ export class Timer extends Entity<TimerProps> {
     return this.props.badgeId;
   }
 
+  get badge(): Badge {
+    return this.props.badge;
+  }
+
   get duration(): number {
     return this.props.duration;
   }
 
-  get remaining(): number {
+  get elapsed(): number {
+    return this.props.elapsed;
+  }
+
+  get remaining(): number | undefined {
     return this.props.remaining;
   }
 
@@ -35,59 +55,126 @@ export class Timer extends Entity<TimerProps> {
     return this.props.startedAt;
   }
 
-  get endAt(): Date | undefined {
-    return this.props.endAt;
+  get lastStartedAt(): Date | undefined {
+    return this.props.lastStartedAt;
+  }
+
+  get history(): TimerHistoryEntry[] {
+    return this.props.history;
+  }
+
+  private calculateTotalElapsed(): number {
+    return this.props.history.reduce((acc, block) => {
+      const blockElapsed =
+        block.end && block.elapsed
+          ? block.elapsed
+          : Date.now() - block.start.getTime();
+      return acc + blockElapsed;
+    }, 0);
+  }
+
+  updateLive(now = new Date()) {
+    let openBlock = 0;
+
+    if (this.status === 'RUNNING' && this.lastStartedAt) {
+      openBlock = now.getTime() - this.lastStartedAt.getTime();
+    }
+
+    const closedBlocks = this.history.reduce(
+      (acc, block) => acc + (block.end ? block.elapsed : 0),
+      0,
+    );
+
+    this.props.elapsed = closedBlocks + openBlock;
+    this.props.remaining = this.duration - this.props.elapsed;
+
+    return { liveElapsed: this.elapsed, remaining: this.props.remaining };
   }
 
   start() {
-    this.props.startedAt = new Date();
-    this.props.endAt = new Date(
-      this.props.startedAt.getTime() + this.duration * 1000 * 60,
-    );
+    if (this.status === 'RUNNING') {
+      throw new BadRequestException('Timer is already running');
+    }
+
+    if (this.status === 'COMPLETED') {
+      throw new BadRequestException('Timer is already completed');
+    }
+
+    const now = new Date();
+
+    if (this.status === 'CREATED') {
+      this.props.startedAt = now;
+    }
+
+    this.history.push({
+      start: now,
+      elapsed: 0,
+    });
+    this.props.lastStartedAt = now;
     this.props.status = 'RUNNING';
   }
 
   pause() {
-    if (!this.endAt || this.status !== 'RUNNING' || this.isExpired()) {
-      return;
+    if (this.status !== 'RUNNING') {
+      throw new BadRequestException('Timer is not running');
     }
 
-    this.props.remaining = !this.isExpired()
-      ? this.endAt.getTime() - new Date().getTime()
-      : 0;
+    const now = new Date();
+    const currentBlock = this.history[this.history.length - 1];
 
+    if (!currentBlock) {
+      throw new BadRequestException('No active blocks found');
+    }
+
+    currentBlock.end = now;
+    currentBlock.elapsed = now.getTime() - currentBlock.start.getTime();
+
+    this.props.elapsed = this.calculateTotalElapsed();
+    this.props.lastStartedAt = undefined;
     this.props.status = 'PAUSED';
   }
 
-  cancel() {
-    this.props.status = 'CANCELED';
+  complete() {
+    if (this.status === 'COMPLETED') {
+      throw new BadRequestException('Timer is already completed');
+    }
+
+    if (this.status === 'RUNNING') {
+      this.endExecution();
+    }
+
+    this.props.elapsed = this.calculateTotalElapsed();
+    this.props.status = 'COMPLETED';
   }
 
-  isExpired() {
-    if (!this.endAt) return false;
+  private endExecution() {
+    const now = new Date();
+    const currentBlock = this.history[this.history.length - 1];
 
-    return this.endAt.getTime() < new Date().getTime();
+    if (currentBlock && !currentBlock.end) {
+      currentBlock.end = now;
+      currentBlock.elapsed = now.getTime() - currentBlock.start.getTime();
+    }
+  }
+
+  isCompleted() {
+    const { remaining } = this.updateLive();
+    return remaining <= 0;
   }
 
   public static create(props: TimerProps, id?: string): Timer {
     return new Timer(props, id);
   }
 
-  public static createNew(
-    badgeId: string,
-    duration: number,
-    started?: boolean,
-  ): Timer {
+  public static createNew(badge: Badge, durationMinutes: number): Timer {
     const timer = this.create({
-      badgeId,
-      duration,
-      remaining: 0,
+      badgeId: badge.id,
+      badge,
+      duration: durationMinutes * 1000 * 60,
+      elapsed: 0,
       status: 'CREATED',
+      history: [],
     });
-
-    if (started) {
-      timer.start();
-    }
 
     return timer;
   }

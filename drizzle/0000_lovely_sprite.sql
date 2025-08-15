@@ -10,10 +10,11 @@ CREATE TABLE "badges" (
 CREATE TABLE "timers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"duration" integer NOT NULL,
-	"remaining" integer,
+	"elapsed" integer DEFAULT 0 NOT NULL,
 	"status" timer_status DEFAULT 'CREATED' NOT NULL,
-	"startedAt" timestamp,
-	"endAt" timestamp,
+	"startedAt" timestamp with time zone,
+	"lastStartedAt" timestamp with time zone,
+	"history" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"badgeId" uuid NOT NULL
 );
 --> statement-breakpoint

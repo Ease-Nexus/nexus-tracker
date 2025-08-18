@@ -2,7 +2,6 @@ import {
   Inject,
   Injectable,
   Logger,
-  NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
@@ -13,6 +12,11 @@ import {
   TimerGateway,
 } from './infrastructure';
 import { Timer } from './domain';
+import {
+  BadgeNotFoundException,
+  TimerNotFoundException,
+  UnavailableBadgeException,
+} from './domain/exceptions';
 
 const TICK_MS = 500; // frequência de cálculo/WS
 const FLUSH_MS = 500; // frequência mínima de persistência
@@ -56,7 +60,6 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
         continue;
       }
 
-      console.log(t);
       // Emite atualização para o front
       this.ws.tick(t);
 
@@ -64,7 +67,7 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
       // isso garante durabilidade de um bloco aberto (já que o start do bloco foi salvo).
       const last = this.lastFlushedAt.get(t.id) ?? 0;
       if (now.getTime() - last >= FLUSH_MS) {
-        // Opcional: atualizar apenas campos voláteis (ex.: updatedAt)
+        // Opcional: atualizar apenas campos voláteis
         // Aqui salvamos o estado atual para “forçar” o heartbeat persistido.
         toFlush.push(t);
         this.lastFlushedAt.set(t.id, now.getTime());
@@ -77,7 +80,7 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    const recovering = await this.timerRepository.getByStatus('RUNNING');
+    const recovering = await this.getActiveTimers();
 
     for (const timer of recovering) {
       if (timer.isCompleted()) {
@@ -104,19 +107,29 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Timer loop stopped');
   }
 
-  async getRunningTimers() {
-    return await this.timerRepository.getByStatus('RUNNING');
+  async getActiveTimers() {
+    return await this.timerRepository.getByStatus([
+      'RUNNING',
+      'PAUSED',
+      'CREATED',
+    ]);
   }
 
   async create(
-    badgeId: string,
+    badgeValue: string,
     durationMinutes: number,
     startImmediately?: boolean,
   ) {
-    const badge = await this.badgeRepository.getByValue(badgeId);
+    const badge = await this.badgeRepository.getByValue(badgeValue);
 
     if (!badge) {
-      throw new NotFoundException('Badge not found');
+      throw new BadgeNotFoundException();
+    }
+
+    const runningTimers = await this.getActiveTimers();
+
+    if (runningTimers.find((t) => t.badgeId === badge.id)) {
+      throw new UnavailableBadgeException();
     }
 
     const timer = Timer.createNew(badge, durationMinutes);
@@ -153,7 +166,7 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
     const timer = await this.timerRepository.getById(timerId);
 
     if (!timer) {
-      throw new NotFoundException('Timer not found');
+      throw new TimerNotFoundException();
     }
 
     timer.complete();

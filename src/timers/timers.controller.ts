@@ -7,7 +7,7 @@ export class TimersController {
 
   @Get()
   async getRunningTimers() {
-    return await this.timersService.getRunningTimers();
+    return await this.timersService.getActiveTimers();
   }
 
   @Post()

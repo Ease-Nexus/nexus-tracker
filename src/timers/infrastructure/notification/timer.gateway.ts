@@ -16,6 +16,7 @@ export class TimerGateway {
     const dto = {
       id: timer.id,
       badgeId: timer.badgeId,
+      badgeValue: timer.badge.badgeValue,
       status: timer.status,
       duration: timer.duration,
       elapsed: timer.elapsed,

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
+import { env } from '../env';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -18,23 +19,22 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus();
 
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
-
     this.logger.error(`Exception: ${exception.message}, status: ${status}`);
 
-    response.status(status).json(
-      isProduction
-        ? {
-            statusCode: status,
-            timestamp: new Date().toISOString(),
-            message: exception.message,
-          }
-        : {
-            statusCode: status,
-            timestamp: new Date().toISOString(),
-            message: exception.message,
-            stack: exception.stack,
-          },
-    );
+    const error: object = {
+      statusCode: status,
+      name: exception.name,
+      message: exception.message,
+      timestamp: new Date().toISOString(),
+    };
+
+    const { nodeEnv, debug } = env;
+    const isDevelopment = nodeEnv === 'development';
+
+    if (isDevelopment && debug) {
+      Object.assign(error, { stack: exception.stack });
+    }
+
+    response.status(status).json(error);
   }
 }

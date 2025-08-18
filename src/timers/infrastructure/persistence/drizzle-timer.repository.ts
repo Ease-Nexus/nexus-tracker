@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { eq, inArray, SQL, sql } from 'drizzle-orm';
 import { type DrizzleDatabase } from 'src/main/config';
 import { tableBadges, timersTable } from 'src/main/config/database/schema';
 import { DRIZZLE } from 'src/shared/infrastructure';
@@ -9,12 +9,16 @@ import { Badge, Timer, TimerStatus } from 'src/timers/domain';
 export class DrizzleTimerRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDatabase) {}
 
-  async getByStatus(status: TimerStatus): Promise<Timer[]> {
+  async getByStatus(status: TimerStatus | TimerStatus[]): Promise<Timer[]> {
+    const whereClause: SQL = Array.isArray(status)
+      ? inArray(timersTable.status, status).getSQL()
+      : eq(timersTable.status, status).getSQL();
+
     const rows = await this.db
       .select()
       .from(timersTable)
       .innerJoin(tableBadges, eq(timersTable.badgeId, tableBadges.id))
-      .where(eq(timersTable.status, status))
+      .where(whereClause)
       .execute();
 
     return rows.map(({ badges, timers }) =>
@@ -31,7 +35,11 @@ export class DrizzleTimerRepository {
           ),
           duration: timers.duration,
           elapsed: timers.elapsed,
-          history: timers.history,
+          history: timers.history.map((h) => ({
+            start: new Date(h.start),
+            end: h.end ? new Date(h.end) : undefined,
+            elapsed: h.elapsed,
+          })),
           status: timers.status,
           startedAt: timers.startedAt ?? undefined,
           lastStartedAt: timers.lastStartedAt ?? undefined,
@@ -64,7 +72,11 @@ export class DrizzleTimerRepository {
         ),
         duration: timers.duration,
         elapsed: timers.elapsed,
-        history: timers.history,
+        history: timers.history.map((h) => ({
+          start: new Date(h.start),
+          end: h.end ? new Date(h.end) : undefined,
+          elapsed: h.elapsed,
+        })),
         status: timers.status,
         startedAt: timers.startedAt ?? undefined,
         lastStartedAt: timers.lastStartedAt ?? undefined,
@@ -136,7 +148,8 @@ export class DrizzleTimerRepository {
     }
     const ids = timers.map((t) => t.id);
 
-    const result = await this.db
+    // const result = await this.db
+    await this.db
       .update(timersTable)
       .set({
         badgeId: this.caseForColumn('badgeId', timers),
@@ -149,8 +162,6 @@ export class DrizzleTimerRepository {
       })
       .where(inArray(timersTable.id, ids))
       .execute();
-
-    console.log({ result });
   }
 
   async delete(id: string): Promise<void> {

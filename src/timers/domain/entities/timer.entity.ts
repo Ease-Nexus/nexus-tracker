@@ -1,7 +1,23 @@
 import { Entity } from 'src/shared/domain/entity';
-import { TimerStatus } from './timer-status.enum';
-import { BadRequestException, Logger } from '@nestjs/common';
+
+import { Logger } from '@nestjs/common';
 import { Badge } from './badge.entity';
+import {
+  NoActiveExecutionBlockException,
+  TimerAlreadyCompletedException,
+  TimerAlreadyStartedException,
+  TimerNotRunningException,
+} from '../exceptions';
+
+export const timerStatuses = [
+  'CREATED',
+  'RUNNING',
+  'PAUSED',
+  'COMPLETED',
+  'CANCELED',
+] as const;
+
+export type TimerStatus = (typeof timerStatuses)[number];
 
 export interface TimerHistoryEntry {
   start: Date;
@@ -93,11 +109,11 @@ export class Timer extends Entity<TimerProps> {
 
   start() {
     if (this.status === 'RUNNING') {
-      throw new BadRequestException('Timer is already running');
+      throw new TimerAlreadyStartedException();
     }
 
     if (this.status === 'COMPLETED') {
-      throw new BadRequestException('Timer is already completed');
+      throw new TimerAlreadyCompletedException();
     }
 
     const now = new Date();
@@ -116,14 +132,14 @@ export class Timer extends Entity<TimerProps> {
 
   pause() {
     if (this.status !== 'RUNNING') {
-      throw new BadRequestException('Timer is not running');
+      throw new TimerNotRunningException();
     }
 
     const now = new Date();
     const currentBlock = this.history[this.history.length - 1];
 
     if (!currentBlock) {
-      throw new BadRequestException('No active blocks found');
+      throw new NoActiveExecutionBlockException();
     }
 
     currentBlock.end = now;
@@ -136,7 +152,7 @@ export class Timer extends Entity<TimerProps> {
 
   complete() {
     if (this.status === 'COMPLETED') {
-      throw new BadRequestException('Timer is already completed');
+      throw new TimerAlreadyCompletedException();
     }
 
     if (this.status === 'RUNNING') {

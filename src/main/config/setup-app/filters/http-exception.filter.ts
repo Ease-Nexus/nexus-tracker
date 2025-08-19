@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
-import { env } from '../env';
+import { env } from '../../env';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {

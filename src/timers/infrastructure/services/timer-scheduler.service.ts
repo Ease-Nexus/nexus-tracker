@@ -12,7 +12,6 @@ import { InfraSymbols } from '../infra-simbols';
 import { Timer } from '../../domain';
 import { TimerGateway } from './timer.gateway';
 
-console.log({ InfraSimbles: InfraSymbols });
 const TICK_MS = 500; // frequência de cálculo/WS
 const FLUSH_MS = 500; // frequência mínima de persistência
 

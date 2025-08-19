@@ -3,7 +3,6 @@ import { DrizzleBadgeRepository, DrizzleTimerRepository } from './persistence';
 import { TimerGateway, TimerSchedulerService } from './services';
 import { InfraSymbols } from './infra-simbols';
 
-console.log({ InfraSimbols: InfraSymbols });
 export const InfraProviders: Provider[] = [
   TimerGateway,
   TimerSchedulerService,

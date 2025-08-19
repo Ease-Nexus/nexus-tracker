@@ -5,7 +5,8 @@ import {
   GetTimersUseCase,
   PauseTimerUseCase,
   StartTimerUseCase,
-} from './application';
+} from '../application';
+import { mapToTimerResultDto } from '../domain';
 
 @Controller('timers')
 export class TimersController {
@@ -18,7 +19,8 @@ export class TimersController {
 
   @Get()
   async getRunningTimers() {
-    return await this.getTimersUseCase.getTimers();
+    const timers = await this.getTimersUseCase.getTimers();
+    return timers.map((timer) => mapToTimerResultDto(timer));
   }
 
   @Post()

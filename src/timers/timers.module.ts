@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TimersController } from './timers.controller';
+import { TimersController } from './api/timers.controller';
 import { DatabaseModule } from 'src/shared/infrastructure/database/database.module';
 import { InfraProviders } from './infrastructure';
 import { applicationProviders } from './application';

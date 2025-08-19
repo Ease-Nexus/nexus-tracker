@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, inArray, SQL, sql } from 'drizzle-orm';
 import { type DrizzleDatabase } from 'src/main/config';
-import { tableBadges, timersTable } from 'src/main/config/database/schema';
+import { badgesTable, timersTable } from 'src/main/config/database/schema-bkp';
 import { DRIZZLE } from 'src/shared/infrastructure';
 import { Badge, Timer, TimerStatus } from 'src/timers/domain';
 
@@ -17,7 +17,7 @@ export class DrizzleTimerRepository {
     const rows = await this.db
       .select()
       .from(timersTable)
-      .innerJoin(tableBadges, eq(timersTable.badgeId, tableBadges.id))
+      .innerJoin(badgesTable, eq(timersTable.badgeId, badgesTable.id))
       .where(whereClause)
       .execute();
 
@@ -53,7 +53,7 @@ export class DrizzleTimerRepository {
     const [row] = await this.db
       .select()
       .from(timersTable)
-      .innerJoin(tableBadges, eq(timersTable.badgeId, tableBadges.id))
+      .innerJoin(badgesTable, eq(timersTable.badgeId, badgesTable.id))
       .where(eq(timersTable.id, timerId))
       .execute();
 

@@ -1,6 +1,6 @@
 import 'dotenv/config'; // loads .env into process.env
 
-import { db } from './db';
+import { db } from './client';
 import { tableBadges } from './schema';
 
 const main = async () => {

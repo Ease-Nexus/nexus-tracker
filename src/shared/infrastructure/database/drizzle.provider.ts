@@ -1,5 +1,5 @@
 import { Provider } from '@nestjs/common';
-import { db } from 'src/main/config/database/db';
+import { db } from 'src/main/config/database/client';
 
 export const DRIZZLE = Symbol('DRIZZLE');
 

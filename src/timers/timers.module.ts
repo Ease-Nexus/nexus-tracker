@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TimersService } from './timers.service';
 import { TimersController } from './timers.controller';
 import { DatabaseModule } from 'src/shared/infrastructure/database/database.module';
-import { InfraProviders, TimerGateway } from './infrastructure';
+import { InfraProviders } from './infrastructure';
+import { applicationProviders } from './application';
 
 @Module({
   imports: [DatabaseModule],
-  providers: [TimersService, TimerGateway, ...InfraProviders],
-  exports: [TimerGateway],
+  providers: [...InfraProviders, ...applicationProviders],
+  exports: [],
   controllers: [TimersController],
 })
 export class TimersModule {}

@@ -1,20 +1,31 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
-import { TimersService } from './timers.service';
+
+import {
+  CreateTimerUseCase,
+  GetTimersUseCase,
+  PauseTimerUseCase,
+  StartTimerUseCase,
+} from './application';
 
 @Controller('timers')
 export class TimersController {
-  constructor(private readonly timersService: TimersService) {}
+  constructor(
+    private readonly createTimerUseCase: CreateTimerUseCase,
+    private readonly startTimerUseCase: StartTimerUseCase,
+    private readonly pauseTimerUseCase: PauseTimerUseCase,
+    private readonly getTimersUseCase: GetTimersUseCase,
+  ) {}
 
   @Get()
   async getRunningTimers() {
-    return await this.timersService.getActiveTimers();
+    return await this.getTimersUseCase.getTimers();
   }
 
   @Post()
   async create(
     @Body() body: { badge: string; durationMinutes: number; started?: boolean },
   ) {
-    return await this.timersService.create(
+    return await this.createTimerUseCase.create(
       body.badge,
       body.durationMinutes,
       body.started,
@@ -23,11 +34,11 @@ export class TimersController {
 
   @Put('start/:id')
   async start(@Param('id') id: string) {
-    return await this.timersService.startTimer(id);
+    return await this.startTimerUseCase.startTimer(id);
   }
 
-  @Put('stop/:id')
-  async stop(@Param('id') id: string) {
-    return await this.timersService.pauseTimer(id);
+  @Put('pause/:id')
+  async pause(@Param('id') id: string) {
+    return await this.pauseTimerUseCase.pauseTimer(id);
   }
 }

@@ -5,25 +5,20 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import {
-  DrizzleBadgeRepository,
-  DrizzleTimerRepository,
-  InfraSimbles,
-  TimerGateway,
-} from './infrastructure';
-import { Timer } from './domain';
-import {
-  BadgeNotFoundException,
-  TimerNotFoundException,
-  UnavailableBadgeException,
-} from './domain/exceptions';
 
+import { DrizzleTimerRepository } from '..';
+import { InfraSymbols } from '../infra-simbols';
+
+import { Timer } from '../../domain';
+import { TimerGateway } from './timer.gateway';
+
+console.log({ InfraSimbles: InfraSymbols });
 const TICK_MS = 500; // frequência de cálculo/WS
 const FLUSH_MS = 500; // frequência mínima de persistência
 
 @Injectable()
-export class TimersService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(TimersService.name);
+export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(TimerSchedulerService.name);
 
   private running = new Map<string, Timer>();
 
@@ -32,10 +27,8 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
   private loop?: NodeJS.Timeout;
 
   constructor(
-    @Inject(InfraSimbles.timerRepository)
+    @Inject(InfraSymbols.timerRepository)
     private readonly timerRepository: DrizzleTimerRepository,
-    @Inject(InfraSimbles.badgeRepository)
-    private readonly badgeRepository: DrizzleBadgeRepository,
     private readonly ws: TimerGateway,
   ) {}
 
@@ -80,7 +73,7 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    const recovering = await this.getActiveTimers();
+    const recovering = await this.timerRepository.getByStatus('RUNNING');
 
     for (const timer of recovering) {
       if (timer.isCompleted()) {
@@ -107,73 +100,14 @@ export class TimersService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Timer loop stopped');
   }
 
-  async getActiveTimers() {
-    return await this.timerRepository.getByStatus([
-      'RUNNING',
-      'PAUSED',
-      'CREATED',
-    ]);
-  }
-
-  async create(
-    badgeValue: string,
-    durationMinutes: number,
-    startImmediately?: boolean,
-  ) {
-    const badge = await this.badgeRepository.getByValue(badgeValue);
-
-    if (!badge) {
-      throw new BadgeNotFoundException();
-    }
-
-    const runningTimers = await this.getActiveTimers();
-
-    if (runningTimers.find((t) => t.badgeId === badge.id)) {
-      throw new UnavailableBadgeException();
-    }
-
-    const timer = Timer.createNew(badge, durationMinutes);
-
-    await this.timerRepository.create(timer);
-
-    if (startImmediately) {
-      await this.startTimer(timer.id);
-    }
-  }
-
-  async startTimer(timerId: string) {
-    const timer = await this.timerRepository.getById(timerId);
-
-    timer.start();
-
-    await this.timerRepository.update(timer);
+  startTimer(timer: Timer) {
     this.running.set(timer.id, timer);
     this.lastFlushedAt.set(timer.id, Date.now());
     this.ws.started(timer);
   }
 
-  async pauseTimer(id: string) {
-    const timer = await this.timerRepository.getById(id);
-
-    timer.pause();
-
-    await this.timerRepository.update(timer);
+  pauseTimer(timer: Timer) {
     this.running.delete(timer.id);
     this.ws.paused(timer);
-  }
-
-  async completeTimer(timerId: string) {
-    const timer = await this.timerRepository.getById(timerId);
-
-    if (!timer) {
-      throw new TimerNotFoundException();
-    }
-
-    timer.complete();
-
-    await this.timerRepository.update(timer);
-
-    this.running.delete(timer.id);
-    this.ws.completed(timer);
   }
 }

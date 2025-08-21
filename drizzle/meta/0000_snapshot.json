@@ -1,5 +1,5 @@
 {
-  "id": "0f64ec43-e49c-431d-bd3a-5c7d815b1b37",
+  "id": "89aa4339-e306-43fe-ac59-dd60b15b904f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -86,6 +86,154 @@
           "tableTo": "tenants",
           "columnsFrom": [
             "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.customers": {
+      "name": "customers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fullName": {
+          "name": "fullName",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "securityNumber": {
+          "name": "securityNumber",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "groupId": {
+          "name": "groupId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fixedBadgeId": {
+          "name": "fixedBadgeId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "customers_tenantId_securityNumber_idx": {
+          "name": "customers_tenantId_securityNumber_idx",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "securityNumber",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customers_groupId_idx": {
+          "name": "customers_groupId_idx",
+          "columns": [
+            {
+              "expression": "groupId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customers_fixedBadgeId_idx": {
+          "name": "customers_fixedBadgeId_idx",
+          "columns": [
+            {
+              "expression": "fixedBadgeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "customers_tenantId_tenants_id_fk": {
+          "name": "customers_tenantId_tenants_id_fk",
+          "tableFrom": "customers",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "customers_groupId_groups_id_fk": {
+          "name": "customers_groupId_groups_id_fk",
+          "tableFrom": "customers",
+          "tableTo": "groups",
+          "columnsFrom": [
+            "groupId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "customers_fixedBadgeId_badges_id_fk": {
+          "name": "customers_fixedBadgeId_badges_id_fk",
+          "tableFrom": "customers",
+          "tableTo": "badges",
+          "columnsFrom": [
+            "fixedBadgeId"
           ],
           "columnsTo": [
             "id"
@@ -218,8 +366,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "userId": {
-          "name": "userId",
+        "customerId": {
+          "name": "customerId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -244,11 +392,11 @@
         }
       },
       "indexes": {
-        "sessions_userId_idx": {
-          "name": "sessions_userId_idx",
+        "sessions_customerId_idx": {
+          "name": "sessions_customerId_idx",
           "columns": [
             {
-              "expression": "userId",
+              "expression": "customerId",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -264,6 +412,36 @@
           "columns": [
             {
               "expression": "badgeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sessions_startedAt_idx": {
+          "name": "sessions_startedAt_idx",
+          "columns": [
+            {
+              "expression": "startedAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sessions_endedAt_idx": {
+          "name": "sessions_endedAt_idx",
+          "columns": [
+            {
+              "expression": "endedAt",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -289,12 +467,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "sessions_userId_users_id_fk": {
-          "name": "sessions_userId_users_id_fk",
+        "sessions_customerId_customers_id_fk": {
+          "name": "sessions_customerId_customers_id_fk",
           "tableFrom": "sessions",
-          "tableTo": "users",
+          "tableTo": "customers",
           "columnsFrom": [
-            "userId"
+            "customerId"
           ],
           "columnsTo": [
             "id"
@@ -341,7 +519,7 @@
         },
         "name": {
           "name": "name",
-          "type": "varchar(255)",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
         },
@@ -454,6 +632,27 @@
         }
       },
       "indexes": {
+        "timers_tenantId_sessionId_idx": {
+          "name": "timers_tenantId_sessionId_idx",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sessionId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "timers_sessionId_idx": {
           "name": "timers_sessionId_idx",
           "columns": [
@@ -504,8 +703,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.users": {
-      "name": "users",
+    "public.transactions": {
+      "name": "transactions",
       "schema": "",
       "columns": {
         "id": {
@@ -521,64 +720,39 @@
           "primaryKey": false,
           "notNull": true
         },
-        "fullName": {
-          "name": "fullName",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "securityNumber": {
-          "name": "securityNumber",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "groupId": {
-          "name": "groupId",
+        "group_id": {
+          "name": "group_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "fixedBadgeId": {
-          "name": "fixedBadgeId",
-          "type": "uuid",
+        "minutes_change": {
+          "name": "minutes_change",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp with time zone",
+        "transaction_type": {
+          "name": "transaction_type",
+          "type": "transaction_type",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
-        "users_tenantId_securityNumber_idx": {
-          "name": "users_tenantId_securityNumber_idx",
+        "transactions_tenantId_idx": {
+          "name": "transactions_tenantId_idx",
           "columns": [
             {
               "expression": "tenantId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "securityNumber",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "users_groupId_idx": {
-          "name": "users_groupId_idx",
-          "columns": [
-            {
-              "expression": "groupId",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -589,26 +763,41 @@
           "method": "btree",
           "with": {}
         },
-        "users_fixedBadgeId_idx": {
-          "name": "users_fixedBadgeId_idx",
+        "transactions_group_id_idx": {
+          "name": "transactions_group_id_idx",
           "columns": [
             {
-              "expression": "fixedBadgeId",
+              "expression": "group_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": true,
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "transactions_created_at_idx": {
+          "name": "transactions_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "users_tenantId_tenants_id_fk": {
-          "name": "users_tenantId_tenants_id_fk",
-          "tableFrom": "users",
+        "transactions_tenantId_tenants_id_fk": {
+          "name": "transactions_tenantId_tenants_id_fk",
+          "tableFrom": "transactions",
           "tableTo": "tenants",
           "columnsFrom": [
             "tenantId"
@@ -619,25 +808,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "users_groupId_groups_id_fk": {
-          "name": "users_groupId_groups_id_fk",
-          "tableFrom": "users",
+        "transactions_group_id_groups_id_fk": {
+          "name": "transactions_group_id_groups_id_fk",
+          "tableFrom": "transactions",
           "tableTo": "groups",
           "columnsFrom": [
-            "groupId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "users_fixedBadgeId_badges_id_fk": {
-          "name": "users_fixedBadgeId_badges_id_fk",
-          "tableFrom": "users",
-          "tableTo": "badges",
-          "columnsFrom": [
-            "fixedBadgeId"
+            "group_id"
           ],
           "columnsTo": [
             "id"
@@ -672,6 +848,14 @@
         "PAUSED",
         "COMPLETED",
         "CANCELED"
+      ]
+    },
+    "public.transaction_type": {
+      "name": "transaction_type",
+      "schema": "public",
+      "values": [
+        "CREDIT",
+        "DEBIT"
       ]
     }
   },

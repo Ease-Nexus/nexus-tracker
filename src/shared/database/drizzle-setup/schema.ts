@@ -12,16 +12,20 @@ import {
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
-import { timerStatuses } from 'src/timers/domain';
+
+import { badgeTypes, transactionTypes } from 'src/modules/management';
+import { timerStatuses } from 'src/modules/timers/domain';
+
+// --- Default sizes ---
+const CODE_SIZE = 60;
+const NAME_SIZE = 100;
 
 // --- Enums ---
-export const badgeTypeEnum = pgEnum('badge_type', [
-  'CARD',
-  'BRACELET',
-  'DIGITAL',
-] as const);
+export const badgeTypeEnum = pgEnum('badge_type', badgeTypes);
 
 export const timerStatusEnum = pgEnum('timer_status', timerStatuses);
+
+export const transactionTypeEnum = pgEnum('transaction_type', transactionTypes);
 
 // --- Tables ---
 
@@ -29,8 +33,8 @@ export const tenantsTable = pgTable(
   'tenants',
   {
     id: uuid('id').notNull().primaryKey().defaultRandom(),
-    code: varchar('code', { length: 60 }).notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
+    code: varchar('code', { length: CODE_SIZE }).notNull(),
+    name: varchar('name', { length: NAME_SIZE }).notNull(),
     description: text('description'),
     contactInfo: text('contact_info'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -45,7 +49,7 @@ export const groupsTable = pgTable(
     tenantId: uuid('tenantId')
       .references(() => tenantsTable.id)
       .notNull(),
-    name: varchar('name', { length: 100 }).notNull(),
+    name: varchar('name', { length: NAME_SIZE }).notNull(),
     description: text('description').notNull(),
     balance: integer('balance').notNull().default(0),
     version: integer('version').notNull().default(0),
@@ -82,8 +86,8 @@ export const badgesTable = pgTable(
   },
 );
 
-export const usersTable = pgTable(
-  'users',
+export const customersTable = pgTable(
+  'customers',
   {
     id: uuid('id').notNull().primaryKey().defaultRandom(),
     tenantId: uuid('tenantId')
@@ -99,14 +103,35 @@ export const usersTable = pgTable(
   },
   (table) => [
     // Índice composto para busca por securityNumber, único por inquilino
-    uniqueIndex('users_tenantId_securityNumber_idx').on(
+    uniqueIndex('customers_tenantId_securityNumber_idx').on(
       table.tenantId,
       table.securityNumber,
     ),
     // Índice na chave estrangeira para otimizar joins com a tabela groups
-    index('users_groupId_idx').on(table.groupId),
+    index('customers_groupId_idx').on(table.groupId),
     // Índice na chave estrangeira para crachás fixos
-    uniqueIndex('users_fixedBadgeId_idx').on(table.fixedBadgeId),
+    uniqueIndex('customers_fixedBadgeId_idx').on(table.fixedBadgeId),
+  ],
+);
+
+export const transactionsTable = pgTable(
+  'transactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenantId')
+      .notNull()
+      .references(() => tenantsTable.id),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => groupsTable.id),
+    minutesChange: integer('minutes_change').notNull(),
+    transactionType: transactionTypeEnum('transaction_type').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('transactions_tenantId_idx').on(table.tenantId),
+    index('transactions_group_id_idx').on(table.groupId),
+    index('transactions_created_at_idx').on(table.createdAt),
   ],
 );
 
@@ -117,8 +142,8 @@ export const sessionsTable = pgTable(
     tenantId: uuid('tenantId')
       .references(() => tenantsTable.id)
       .notNull(),
-    userId: uuid('userId')
-      .references(() => usersTable.id)
+    customerId: uuid('customerId')
+      .references(() => customersTable.id)
       .notNull(),
     badgeId: uuid('badgeId')
       .references(() => badgesTable.id)
@@ -127,9 +152,11 @@ export const sessionsTable = pgTable(
     endedAt: timestamp('endedAt', { mode: 'date', withTimezone: true }),
   },
   (table) => [
-    // Índices para otimizar joins com users e badges
-    index('sessions_userId_idx').on(table.userId),
+    // Índices para otimizar joins com customers e badges
+    index('sessions_customerId_idx').on(table.customerId),
     index('sessions_badgeId_idx').on(table.badgeId),
+    index('sessions_startedAt_idx').on(table.startedAt),
+    index('sessions_endedAt_idx').on(table.endedAt),
   ],
 );
 
@@ -164,6 +191,7 @@ export const timersTable = pgTable(
   },
   (table) => [
     // Índice na chave estrangeira para otimizar joins com a tabela sessions
+    index('timers_tenantId_sessionId_idx').on(table.tenantId, table.sessionId),
     index('timers_sessionId_idx').on(table.sessionId),
   ],
 );
@@ -175,35 +203,38 @@ export const tenantsRelations = relations(tenantsTable, ({ many }) => ({
 }));
 
 export const groupsRelations = relations(groupsTable, ({ many, one }) => ({
-  users: many(usersTable),
+  customers: many(customersTable),
   tenant: one(tenantsTable, {
     fields: [groupsTable.tenantId],
     references: [tenantsTable.id],
   }),
 }));
 
-export const usersRelations = relations(usersTable, ({ one, many }) => ({
-  tenant: one(tenantsTable, {
-    fields: [usersTable.tenantId],
-    references: [tenantsTable.id],
+export const customersRelations = relations(
+  customersTable,
+  ({ one, many }) => ({
+    tenant: one(tenantsTable, {
+      fields: [customersTable.tenantId],
+      references: [tenantsTable.id],
+    }),
+    group: one(groupsTable, {
+      fields: [customersTable.groupId],
+      references: [groupsTable.id],
+    }),
+    fixedBadge: one(badgesTable, {
+      fields: [customersTable.fixedBadgeId],
+      references: [badgesTable.id],
+    }),
+    sessions: many(sessionsTable),
   }),
-  group: one(groupsTable, {
-    fields: [usersTable.groupId],
-    references: [groupsTable.id],
-  }),
-  fixedBadge: one(badgesTable, {
-    fields: [usersTable.fixedBadgeId],
-    references: [badgesTable.id],
-  }),
-  sessions: many(sessionsTable),
-}));
+);
 
 export const badgesRelations = relations(badgesTable, ({ many, one }) => ({
   tenant: one(tenantsTable, {
     fields: [badgesTable.tenantId],
     references: [tenantsTable.id],
   }),
-  users: many(usersTable),
+  customers: many(customersTable),
   sessions: many(sessionsTable),
 }));
 
@@ -212,9 +243,9 @@ export const sessionsRelations = relations(sessionsTable, ({ one }) => ({
     fields: [sessionsTable.tenantId],
     references: [tenantsTable.id],
   }),
-  user: one(usersTable, {
-    fields: [sessionsTable.userId],
-    references: [usersTable.id],
+  customer: one(customersTable, {
+    fields: [sessionsTable.customerId],
+    references: [customersTable.id],
   }),
   badge: one(badgesTable, {
     fields: [sessionsTable.badgeId],
@@ -236,3 +267,17 @@ export const timersRelations = relations(timersTable, ({ one }) => ({
     references: [sessionsTable.id],
   }),
 }));
+
+export const transactionsRelations = relations(
+  transactionsTable,
+  ({ one }) => ({
+    tenant: one(tenantsTable, {
+      fields: [transactionsTable.tenantId],
+      references: [tenantsTable.id],
+    }),
+    group: one(groupsTable, {
+      fields: [transactionsTable.groupId],
+      references: [groupsTable.id],
+    }),
+  }),
+);

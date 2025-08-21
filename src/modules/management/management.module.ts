@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { TimersModule } from '../timers';
 
-@Module({})
+@Module({
+  imports: [TimersModule],
+})
 export class ManagementModule {}

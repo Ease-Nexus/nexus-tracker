@@ -1,5 +1,5 @@
 {
-  "id": "89aa4339-e306-43fe-ac59-dd60b15b904f",
+  "id": "0dd4279e-df22-48fb-83c3-a3fb5dcea440",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -86,6 +86,128 @@
           "tableTo": "tenants",
           "columnsFrom": [
             "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.customer_packages": {
+      "name": "customer_packages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customerId": {
+          "name": "customerId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "packageId": {
+          "name": "packageId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "renewsAt": {
+          "name": "renewsAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "customer_packages_customerId_idx": {
+          "name": "customer_packages_customerId_idx",
+          "columns": [
+            {
+              "expression": "customerId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customer_packages_packageId_idx": {
+          "name": "customer_packages_packageId_idx",
+          "columns": [
+            {
+              "expression": "packageId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "customer_packages_tenantId_tenants_id_fk": {
+          "name": "customer_packages_tenantId_tenants_id_fk",
+          "tableFrom": "customer_packages",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "customer_packages_customerId_customers_id_fk": {
+          "name": "customer_packages_customerId_customers_id_fk",
+          "tableFrom": "customer_packages",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "customer_packages_packageId_packages_id_fk": {
+          "name": "customer_packages_packageId_packages_id_fk",
+          "tableFrom": "customer_packages",
+          "tableTo": "packages",
+          "columnsFrom": [
+            "packageId"
           ],
           "columnsTo": [
             "id"
@@ -349,6 +471,99 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.packages": {
+      "name": "packages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minutes": {
+          "name": "minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "packages_tenantId_name_idx": {
+          "name": "packages_tenantId_name_idx",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "packages_tenantId_tenants_id_fk": {
+          "name": "packages_tenantId_tenants_id_fk",
+          "tableFrom": "packages",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.sessions": {
       "name": "sessions",
       "schema": "",
@@ -370,7 +585,7 @@
           "name": "customerId",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "badgeId": {
           "name": "badgeId",

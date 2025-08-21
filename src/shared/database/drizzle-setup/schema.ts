@@ -13,7 +13,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 
-import { badgeTypes, transactionTypes } from 'src/modules/management';
+import { badgeTypes, transactionTypes } from 'src/modules/management/domain';
 import { timerStatuses } from 'src/modules/timers/domain';
 
 // --- Default sizes ---
@@ -42,27 +42,6 @@ export const tenantsTable = pgTable(
   (table) => [uniqueIndex('tenants_name_idx').on(table.name)],
 );
 
-export const groupsTable = pgTable(
-  'groups',
-  {
-    id: uuid('id').notNull().primaryKey().defaultRandom(),
-    tenantId: uuid('tenantId')
-      .references(() => tenantsTable.id)
-      .notNull(),
-    name: varchar('name', { length: NAME_SIZE }).notNull(),
-    description: text('description').notNull(),
-    balance: integer('balance').notNull().default(0),
-    version: integer('version').notNull().default(0),
-    enabled: boolean('enabled').notNull().default(true),
-    createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true }),
-  },
-  (table) => {
-    return [
-      uniqueIndex('groups_tenantId_name_idx').on(table.tenantId, table.name),
-    ];
-  },
-);
-
 export const badgesTable = pgTable(
   'badges',
   {
@@ -84,6 +63,45 @@ export const badgesTable = pgTable(
       ),
     ];
   },
+);
+
+export const groupsTable = pgTable(
+  'groups',
+  {
+    id: uuid('id').notNull().primaryKey().defaultRandom(),
+    tenantId: uuid('tenantId')
+      .references(() => tenantsTable.id)
+      .notNull(),
+    name: varchar('name', { length: NAME_SIZE }).notNull(),
+    description: text('description').notNull(),
+    balance: integer('balance').notNull().default(0),
+    version: integer('version').notNull().default(0),
+    enabled: boolean('enabled').notNull().default(true),
+    createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true }),
+  },
+  (table) => {
+    return [
+      uniqueIndex('groups_tenantId_name_idx').on(table.tenantId, table.name),
+    ];
+  },
+);
+
+export const packagesTable = pgTable(
+  'packages',
+  {
+    id: uuid('id').notNull().primaryKey().defaultRandom(),
+    tenantId: uuid('tenantId')
+      .references(() => tenantsTable.id)
+      .notNull(),
+    name: varchar('name', { length: NAME_SIZE }).notNull(),
+    description: text('description').notNull(),
+    minutes: integer('minutes').notNull(), // Minutos que o pacote oferece
+    enabled: boolean('enabled').notNull().default(true),
+    createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('packages_tenantId_name_idx').on(table.tenantId, table.name),
+  ],
 );
 
 export const customersTable = pgTable(
@@ -111,6 +129,33 @@ export const customersTable = pgTable(
     index('customers_groupId_idx').on(table.groupId),
     // Índice na chave estrangeira para crachás fixos
     uniqueIndex('customers_fixedBadgeId_idx').on(table.fixedBadgeId),
+  ],
+);
+
+export const customerPackagesTable = pgTable(
+  'customer_packages',
+  {
+    id: uuid('id').notNull().primaryKey().defaultRandom(),
+    tenantId: uuid('tenantId')
+      .references(() => tenantsTable.id)
+      .notNull(),
+    customerId: uuid('customerId')
+      .references(() => customersTable.id)
+      .notNull(),
+    packageId: uuid('packageId')
+      .references(() => packagesTable.id)
+      .notNull(),
+    renewsAt: timestamp('renewsAt', {
+      mode: 'date',
+      withTimezone: true,
+    }).notNull(),
+    createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('customer_packages_customerId_idx').on(table.customerId),
+    index('customer_packages_packageId_idx').on(table.packageId),
   ],
 );
 
@@ -142,9 +187,7 @@ export const sessionsTable = pgTable(
     tenantId: uuid('tenantId')
       .references(() => tenantsTable.id)
       .notNull(),
-    customerId: uuid('customerId')
-      .references(() => customersTable.id)
-      .notNull(),
+    customerId: uuid('customerId').references(() => customersTable.id),
     badgeId: uuid('badgeId')
       .references(() => badgesTable.id)
       .notNull(),
@@ -210,6 +253,15 @@ export const groupsRelations = relations(groupsTable, ({ many, one }) => ({
   }),
 }));
 
+export const packagesRelations = relations(packagesTable, ({ many, one }) => ({
+  tenant: one(tenantsTable, {
+    fields: [packagesTable.tenantId],
+    references: [tenantsTable.id],
+  }),
+  // Um pacote pode estar em muitos vínculos de cliente (customerPackages)
+  customerPackages: many(customerPackagesTable),
+}));
+
 export const customersRelations = relations(
   customersTable,
   ({ one, many }) => ({
@@ -226,6 +278,27 @@ export const customersRelations = relations(
       references: [badgesTable.id],
     }),
     sessions: many(sessionsTable),
+    customerPackages: many(customerPackagesTable),
+  }),
+);
+
+export const customerPackagesRelations = relations(
+  customerPackagesTable,
+  ({ one }) => ({
+    tenant: one(tenantsTable, {
+      fields: [customerPackagesTable.tenantId],
+      references: [tenantsTable.id],
+    }),
+    // Cada vínculo pertence a um cliente
+    customer: one(customersTable, {
+      fields: [customerPackagesTable.customerId],
+      references: [customersTable.id],
+    }),
+    // Cada vínculo referencia um pacote
+    package: one(packagesTable, {
+      fields: [customerPackagesTable.packageId],
+      references: [packagesTable.id],
+    }),
   }),
 );
 

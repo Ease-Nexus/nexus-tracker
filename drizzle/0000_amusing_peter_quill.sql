@@ -11,6 +11,15 @@ CREATE TABLE "badges" (
 	"isFixed" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "customer_packages" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenantId" uuid NOT NULL,
+	"customerId" uuid NOT NULL,
+	"packageId" uuid NOT NULL,
+	"renewsAt" timestamp with time zone NOT NULL,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "customers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"tenantId" uuid NOT NULL,
@@ -32,10 +41,20 @@ CREATE TABLE "groups" (
 	"createdAt" timestamp with time zone
 );
 --> statement-breakpoint
+CREATE TABLE "packages" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenantId" uuid NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"description" text NOT NULL,
+	"minutes" integer NOT NULL,
+	"enabled" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp with time zone
+);
+--> statement-breakpoint
 CREATE TABLE "sessions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"tenantId" uuid NOT NULL,
-	"customerId" uuid NOT NULL,
+	"customerId" uuid,
 	"badgeId" uuid NOT NULL,
 	"startedAt" timestamp with time zone,
 	"endedAt" timestamp with time zone
@@ -72,10 +91,14 @@ CREATE TABLE "transactions" (
 );
 --> statement-breakpoint
 ALTER TABLE "badges" ADD CONSTRAINT "badges_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "customer_packages" ADD CONSTRAINT "customer_packages_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "customer_packages" ADD CONSTRAINT "customer_packages_customerId_customers_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "customer_packages" ADD CONSTRAINT "customer_packages_packageId_packages_id_fk" FOREIGN KEY ("packageId") REFERENCES "public"."packages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customers" ADD CONSTRAINT "customers_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customers" ADD CONSTRAINT "customers_groupId_groups_id_fk" FOREIGN KEY ("groupId") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customers" ADD CONSTRAINT "customers_fixedBadgeId_badges_id_fk" FOREIGN KEY ("fixedBadgeId") REFERENCES "public"."badges"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "groups" ADD CONSTRAINT "groups_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "packages" ADD CONSTRAINT "packages_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_customerId_customers_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_badgeId_badges_id_fk" FOREIGN KEY ("badgeId") REFERENCES "public"."badges"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -84,10 +107,13 @@ ALTER TABLE "timers" ADD CONSTRAINT "timers_sessionId_sessions_id_fk" FOREIGN KE
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_tenantId_tenants_id_fk" FOREIGN KEY ("tenantId") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "badges_tenantId_badgeValue_idx" ON "badges" USING btree ("tenantId","badgeValue");--> statement-breakpoint
+CREATE INDEX "customer_packages_customerId_idx" ON "customer_packages" USING btree ("customerId");--> statement-breakpoint
+CREATE INDEX "customer_packages_packageId_idx" ON "customer_packages" USING btree ("packageId");--> statement-breakpoint
 CREATE UNIQUE INDEX "customers_tenantId_securityNumber_idx" ON "customers" USING btree ("tenantId","securityNumber");--> statement-breakpoint
 CREATE INDEX "customers_groupId_idx" ON "customers" USING btree ("groupId");--> statement-breakpoint
 CREATE UNIQUE INDEX "customers_fixedBadgeId_idx" ON "customers" USING btree ("fixedBadgeId");--> statement-breakpoint
 CREATE UNIQUE INDEX "groups_tenantId_name_idx" ON "groups" USING btree ("tenantId","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "packages_tenantId_name_idx" ON "packages" USING btree ("tenantId","name");--> statement-breakpoint
 CREATE INDEX "sessions_customerId_idx" ON "sessions" USING btree ("customerId");--> statement-breakpoint
 CREATE INDEX "sessions_badgeId_idx" ON "sessions" USING btree ("badgeId");--> statement-breakpoint
 CREATE INDEX "sessions_startedAt_idx" ON "sessions" USING btree ("startedAt");--> statement-breakpoint

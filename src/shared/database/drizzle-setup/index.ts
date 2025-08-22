@@ -1,1 +1,2 @@
-export * from './client';
+export * from './drizzle.provider';
+export * from './schema';

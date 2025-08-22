@@ -1,23 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { DrizzleDatabase } from '../drizzle-setup';
-import { badgesTable, tenantsTable } from '../drizzle-setup/schema';
+import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
+import {
+  badgesTable,
+  sessionsTable,
+  tenantsTable,
+} from '../drizzle-setup/schema';
 import { BadgeMapper } from './mappers';
-import { databaseSymbols } from '../database-symbols';
-import { Badge } from 'src/modules/management';
+
+import { Badge } from 'src/modules/management/domain/entities/badge.entity';
 
 @Injectable()
 export class DrizzleBadgeRepository {
-  constructor(
-    @Inject(databaseSymbols.DRIZLE_DB) private readonly db: DrizzleDatabase,
-  ) {}
+  constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
   async getByValue(value: string): Promise<Badge | undefined> {
     const [row] = await this.db
       .select()
       .from(badgesTable)
       .innerJoin(tenantsTable, eq(badgesTable.tenantId, tenantsTable.id))
+      .leftJoin(sessionsTable, eq(sessionsTable.badgeId, badgesTable.id))
       .where(eq(badgesTable.badgeValue, value))
       .execute();
 
@@ -25,11 +28,12 @@ export class DrizzleBadgeRepository {
       return;
     }
 
-    const { badges, tenants } = row;
+    const { badges, tenants, sessions } = row;
 
     return BadgeMapper.toDomain({
       badges,
       tenants,
+      sessions, // Handle optional session data
     });
   }
 }

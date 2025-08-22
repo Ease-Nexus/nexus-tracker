@@ -1,6 +1,6 @@
 import 'dotenv/config'; // loads .env into process.env
 import { v4 as uuid } from 'uuid';
-import { db } from './client';
+import { db } from './drizzle.provider';
 import { badgesTable, tenantsTable } from './schema';
 
 const main = async () => {

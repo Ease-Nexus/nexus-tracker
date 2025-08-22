@@ -1,14 +1,19 @@
-import { Badge, Tenant } from 'src/modules/management';
-import { tenantsTable, badgesTable } from '../../drizzle-setup/schema';
+import { Badge, Session, Tenant } from 'src/modules/management/domain';
+import {
+  tenantsTable,
+  badgesTable,
+  sessionsTable,
+} from '../../drizzle-setup/schema';
 
 export interface BadgePersistence {
   tenants: typeof tenantsTable.$inferSelect;
   badges: typeof badgesTable.$inferSelect;
+  sessions?: typeof sessionsTable.$inferSelect | null; // Optional, in case session data is not always present
 }
 
 export class BadgeMapper {
   static toDomain(raw: BadgePersistence): Badge {
-    const { badges, tenants } = raw;
+    const { badges, tenants, sessions } = raw;
     return Badge.create(
       {
         tenantId: tenants.id,
@@ -27,6 +32,18 @@ export class BadgeMapper {
         isFixed: badges.isFixed,
         enabled: badges.enabled,
         description: badges.description,
+        session: sessions
+          ? Session.create(
+              {
+                tenantId: sessions.tenantId,
+                badgeId: sessions.badgeId,
+                startedAt: sessions.startedAt ?? undefined,
+                endedAt: sessions.endedAt ?? undefined,
+                customerId: sessions.customerId ?? undefined,
+              },
+              sessions.id,
+            )
+          : undefined, // Handle optional session data
       },
       badges.id,
     );

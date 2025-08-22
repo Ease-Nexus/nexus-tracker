@@ -2,16 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq, inArray, SQL, sql } from 'drizzle-orm';
 
 import { Timer, TimerStatus } from 'src/modules/timers/domain';
-import { databaseSymbols } from '../database-symbols';
-import type { DrizzleDatabase } from '../drizzle-setup';
+import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
 import { tenantsTable, timersTable } from '../drizzle-setup/schema';
-import { Tenant } from 'src/modules/management';
+import { Tenant } from 'src/modules/management/domain/entities';
 
 @Injectable()
 export class DrizzleTimerRepository {
-  constructor(
-    @Inject(databaseSymbols.DRIZLE_DB) private readonly db: DrizzleDatabase,
-  ) {}
+  constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
   async getByStatus(status: TimerStatus | TimerStatus[]): Promise<Timer[]> {
     const whereClause: SQL = Array.isArray(status)

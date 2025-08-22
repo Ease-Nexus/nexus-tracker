@@ -1,3 +1,4 @@
+import { Provider } from '@nestjs/common';
 import { Pool } from 'pg';
 
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -11,3 +12,12 @@ const pool = new Pool({
 export const db = drizzle(pool, { schema });
 
 export type DrizzleDatabase = typeof db;
+
+export const DRIZLE_DB = Symbol('DRIZLE_DB');
+
+export const DrizzleProvider: Provider = {
+  provide: DRIZLE_DB,
+  useFactory: () => {
+    return db;
+  },
+};

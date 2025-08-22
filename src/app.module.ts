@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TimersModule } from './modules';
 import { ConfigModule } from '@nestjs/config';
 import { ManagementModule } from './modules/management/management.module';
-import { DatabaseModule } from './shared';
+import { DatabaseModule } from './shared/database';
+import { TimersModule } from './modules';
 
 @Module({
   imports: [

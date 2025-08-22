@@ -1,18 +1,23 @@
-import { Provider } from '@nestjs/common';
 import { Module } from '@nestjs/common';
-import { db } from './drizzle-setup';
-import { databaseSymbols } from './database-symbols';
-import { DatabaseProviders } from './database-providers';
 
-export const DrizzleProvider: Provider = {
-  provide: databaseSymbols.DRIZLE_DB,
-  useFactory: () => {
-    return db;
-  },
-};
+import {
+  DrizzleBadgeRepository,
+  DrizzleSessionRepository,
+  DrizzleTimerRepository,
+} from './repositories';
+import { DrizzleProvider } from './drizzle-setup';
 
 @Module({
-  providers: [DrizzleProvider, ...DatabaseProviders],
-  exports: [DrizzleProvider, ...DatabaseProviders],
+  providers: [
+    DrizzleProvider,
+    DrizzleTimerRepository,
+    DrizzleBadgeRepository,
+    DrizzleSessionRepository,
+  ],
+  exports: [
+    DrizzleTimerRepository,
+    DrizzleBadgeRepository,
+    DrizzleSessionRepository,
+  ],
 })
 export class DatabaseModule {}

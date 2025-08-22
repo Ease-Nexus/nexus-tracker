@@ -6,11 +6,11 @@ import { Customer } from './customer.entity';
 export interface SessionProps {
   tenantId: string;
   tenant?: Tenant;
-  customerId: string;
+  customerId?: string;
   customer?: Customer;
   badgeId: string;
   badge?: Badge;
-  startedAt: Date;
+  startedAt?: Date;
   endedAt?: Date;
 }
 export class Session extends Entity<SessionProps> {
@@ -26,7 +26,7 @@ export class Session extends Entity<SessionProps> {
     return this.props.tenant;
   }
 
-  get customerId(): string {
+  get customerId(): string | undefined {
     return this.props.customerId;
   }
 
@@ -42,7 +42,7 @@ export class Session extends Entity<SessionProps> {
     return this.props.badge;
   }
 
-  get startedAt(): Date {
+  get startedAt(): Date | undefined {
     return this.props.startedAt;
   }
 

@@ -1,4 +1,5 @@
-import { Tenant } from 'src/modules/management/domain';
+import { Session } from './session.entity';
+import { Tenant } from './tenant.entity';
 import { Entity } from 'src/shared/domain';
 
 export const badgeTypes = ['CARD', 'BRACELET', 'DIGITAL'] as const;
@@ -13,6 +14,7 @@ export interface BadgeProps {
   description: string;
   badgeType: BadgeType;
   isFixed: boolean;
+  session?: Session;
 }
 
 export class Badge extends Entity<BadgeProps> {
@@ -39,6 +41,13 @@ export class Badge extends Entity<BadgeProps> {
   }
   get isFixed(): boolean {
     return this.props.isFixed;
+  }
+  get session(): Session | undefined {
+    return this.props.session;
+  }
+
+  public inUse(): boolean {
+    return !!this.props.session;
   }
 
   static create(props: BadgeProps, id?: string) {

@@ -33,7 +33,7 @@ export const tenantsTable = pgTable(
   'tenants',
   {
     id: uuid('id').notNull().primaryKey().defaultRandom(),
-    code: varchar('code', { length: CODE_SIZE }).notNull(),
+    code: varchar('code', { length: CODE_SIZE }).unique().notNull(),
     name: varchar('name', { length: NAME_SIZE }).notNull(),
     description: text('description'),
     contactInfo: text('contact_info'),

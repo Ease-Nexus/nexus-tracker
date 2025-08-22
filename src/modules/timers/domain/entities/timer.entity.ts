@@ -7,7 +7,7 @@ import {
   TimerAlreadyStartedException,
   TimerNotRunningException,
 } from '../exceptions';
-import { Session, Tenant } from 'src/modules/management';
+import { Session, Tenant } from 'src/modules/management/domain';
 
 export const timerStatuses = [
   'CREATED',
@@ -196,7 +196,7 @@ export class Timer extends Entity<TimerProps> {
     const { tenant } = session;
 
     const timer = this.create({
-      tenantId: tenant!.id,
+      tenantId: session.tenantId,
       tenant,
       sessionId: session.id,
       session,

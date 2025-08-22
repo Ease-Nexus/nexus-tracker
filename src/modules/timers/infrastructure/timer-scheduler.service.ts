@@ -1,5 +1,4 @@
 import {
-  Inject,
   Injectable,
   Logger,
   OnModuleDestroy,
@@ -8,7 +7,7 @@ import {
 
 import { Timer } from '../domain';
 import { TimerGateway } from './timer.gateway';
-import { databaseSymbols, DrizzleTimerRepository } from 'src/shared';
+import { DrizzleTimerRepository } from 'src/shared/database';
 
 const TICK_MS = 500; // frequência de cálculo/WS
 const FLUSH_MS = 500; // frequência mínima de persistência
@@ -24,7 +23,6 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
   private loop?: NodeJS.Timeout;
 
   constructor(
-    @Inject(databaseSymbols.timerRepository)
     private readonly timerRepository: DrizzleTimerRepository,
     private readonly ws: TimerGateway,
   ) {}

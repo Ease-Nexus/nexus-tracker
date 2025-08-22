@@ -1,14 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Timer } from 'src/modules/timers';
-import { Session } from 'src/modules/management';
-import { UnavailableBadgeException } from 'src/modules/timers/domain/exceptions';
+import { Injectable } from '@nestjs/common';
+import { Timer } from '../../domain';
+import { Session } from 'src/modules/management/domain';
+
 import { TimerSchedulerService } from 'src/modules/timers/infrastructure';
-import { databaseSymbols, DrizzleTimerRepository } from 'src/shared';
+import { DrizzleTimerRepository } from 'src/shared/database';
 
 @Injectable()
 export class CreateTimerUseCase {
   constructor(
-    @Inject(databaseSymbols.timerRepository)
     private readonly timerRepository: DrizzleTimerRepository,
     private readonly timerSchedulerService: TimerSchedulerService,
   ) {}
@@ -18,16 +17,6 @@ export class CreateTimerUseCase {
     durationMinutes: number,
     startImmediately?: boolean,
   ) {
-    const activeTimers = await this.timerRepository.getByStatus([
-      'RUNNING',
-      'PAUSED',
-      'CREATED',
-    ]);
-
-    if (activeTimers.find((t) => t.session?.badgeId === session.badge?.id)) {
-      throw new UnavailableBadgeException();
-    }
-
     const timer = Timer.createNew(session, durationMinutes);
 
     if (startImmediately) {

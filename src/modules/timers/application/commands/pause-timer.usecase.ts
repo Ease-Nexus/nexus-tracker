@@ -1,11 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { TimerSchedulerService } from 'src/modules/timers/infrastructure';
-import { databaseSymbols, DrizzleTimerRepository } from 'src/shared';
+import { DrizzleTimerRepository } from 'src/shared/database';
 
 @Injectable()
 export class PauseTimerUseCase {
   constructor(
-    @Inject(databaseSymbols.timerRepository)
     private readonly timerRepository: DrizzleTimerRepository,
     private readonly timerSchedulerService: TimerSchedulerService,
   ) {}

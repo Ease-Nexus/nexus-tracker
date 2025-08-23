@@ -9,7 +9,7 @@ import {
 } from '../drizzle-setup/schema';
 import { BadgeMapper } from './mappers';
 
-import { Badge } from 'src/modules/management/domain/entities/badge.entity';
+import { Badge } from 'src/core/domain';
 
 @Injectable()
 export class DrizzleBadgeRepository {

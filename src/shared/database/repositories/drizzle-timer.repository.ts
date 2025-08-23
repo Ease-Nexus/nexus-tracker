@@ -1,10 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, inArray, SQL, sql } from 'drizzle-orm';
 
-import { Timer, TimerStatus } from 'src/modules/timers/domain';
+import { Tenant, Timer, TimerStatus } from 'src/core/domain';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
 import { tenantsTable, timersTable } from '../drizzle-setup/schema';
-import { Tenant } from 'src/modules/management/domain/entities';
 
 @Injectable()
 export class DrizzleTimerRepository {

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import { Session } from 'src/modules/management/domain/entities';
+import { Session } from 'src/core/domain';
 import { sessionsTable } from '../drizzle-setup/schema';
 
 @Injectable()

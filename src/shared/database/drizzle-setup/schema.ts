@@ -13,8 +13,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 
-import { badgeTypes, transactionTypes } from 'src/modules/management/domain';
-import { timerStatuses } from 'src/modules/timers/domain';
+import { badgeTypes, transactionTypes, timerStatuses } from 'src/core/domain';
 
 // --- Default sizes ---
 const CODE_SIZE = 60;

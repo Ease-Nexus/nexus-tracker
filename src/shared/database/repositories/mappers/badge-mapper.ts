@@ -1,4 +1,4 @@
-import { Badge, Session, Tenant } from 'src/modules/management/domain';
+import { Badge, Session, Tenant } from 'src/core/domain';
 import {
   tenantsTable,
   badgesTable,

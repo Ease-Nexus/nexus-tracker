@@ -50,6 +50,10 @@ export class Session extends Entity<SessionProps> {
     return this.props.endedAt;
   }
 
+  end() {
+    this.props.endedAt = new Date();
+  }
+
   static create(props: SessionProps, id?: string): Session {
     return new Session(props, id);
   }

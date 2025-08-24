@@ -6,6 +6,7 @@ import { StartSessionUseCase } from './application/commands/start-session.usecas
 import { DatabaseModule } from 'src/shared/database';
 import {
   CreateTimerUseCase,
+  EndSessionUsecase,
   GetTimersUseCase,
   PauseTimerUseCase,
   StartTimerUseCase,
@@ -16,9 +17,10 @@ import { TimersController } from './api';
 @Module({
   imports: [DatabaseModule],
   providers: [
-    TimerSchedulerService,
     TimerGateway,
     StartSessionUseCase,
+    EndSessionUsecase,
+    TimerSchedulerService,
     CreateTimerUseCase,
     StartTimerUseCase,
     PauseTimerUseCase,

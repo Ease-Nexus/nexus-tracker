@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SessionsController } from './api/sessions.controller';
 
-import { StartSessionUseCase } from './application/commands/start-session.usecase';
+import { StartSessionUseCase } from './application/commands/sessions/start-session.usecase';
 
 import { DatabaseModule } from 'src/shared/database';
 import {

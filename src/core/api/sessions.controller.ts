@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { StartSessionUseCase } from '../application/commands/start-session.usecase';
+import { StartSessionUseCase } from '../application/commands/sessions/start-session.usecase';
 import type { StartSessionDto } from '../domain/dtos';
 
 @Controller('sessions')

@@ -1,25 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import { Session, Tenant } from 'src/core/domain';
+import {
+  Session,
+  SessionsGetAllParamsDto,
+  SessionsGetByIdParamsDto,
+  Tenant,
+} from 'src/core/domain';
 import { sessionsTable, tenantsTable } from '../drizzle-setup/schema';
 import { and, eq } from 'drizzle-orm';
-
-export interface SessionsRepositoryGetAllParams {
-  tenantCode: string;
-}
-
-export interface SessionsRepositoryGetByIdParams {
-  tenantCode: string;
-  id: string;
-}
 
 @Injectable()
 export class DrizzleSessionRepository {
   constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
-  async getAll({
-    tenantCode,
-  }: SessionsRepositoryGetAllParams): Promise<Session[]> {
+  async getAll({ tenantCode }: SessionsGetAllParamsDto): Promise<Session[]> {
     const sessions = await this.db.query.sessionsTable.findMany({
       with: {
         tenant: true,
@@ -54,7 +48,7 @@ export class DrizzleSessionRepository {
   async getById({
     tenantCode,
     id,
-  }: SessionsRepositoryGetByIdParams): Promise<Session | undefined> {
+  }: SessionsGetByIdParamsDto): Promise<Session | undefined> {
     const session = await this.db.query.sessionsTable.findFirst({
       with: {
         tenant: true,

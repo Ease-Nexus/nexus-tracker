@@ -8,7 +8,7 @@ import {
 import { Timer } from '../domain';
 import { TimerGateway } from './timer.gateway';
 import { DrizzleTimerRepository } from 'src/shared/database';
-import { EndSessionUsecase } from '../application/commands/end-session.usecase';
+import { EndSessionUsecase } from '../application/commands/sessions/end-session.usecase';
 
 const TICK_MS = 500; // frequência de cálculo/WS
 const FLUSH_MS = 500; // frequência mínima de persistência
@@ -45,7 +45,13 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
       if (t.isCompleted()) {
         t.complete(); // fecha bloco + complete()
         toFlush.push(t);
-        await this.endSessionUseCase.end(t.sessionId);
+        if (t.session) {
+          await this.endSessionUseCase.end({
+            id: t.session?.id,
+            tenantCode: t.tenantId,
+          });
+        }
+
         this.running.delete(t.id);
         this.ws.completed(t);
         continue;
@@ -76,7 +82,14 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
     for (const timer of recovering) {
       if (timer.isCompleted()) {
         timer.complete();
-        void this.endSessionUseCase.end(timer.sessionId);
+
+        if (timer.session) {
+          await this.endSessionUseCase.end({
+            id: timer.session?.id,
+            tenantCode: timer.tenantId,
+          });
+        }
+
         await this.timerRepository.update(timer);
         this.ws.completed(timer);
       } else {

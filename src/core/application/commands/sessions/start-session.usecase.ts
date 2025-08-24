@@ -9,8 +9,8 @@ import {
   Session,
   StartSessionDto,
   UnavailableBadgeException,
-} from '../../domain';
-import { CreateTimerUseCase } from './create-timer.usecase';
+} from '../../../domain';
+import { CreateTimerUseCase } from '../timers/create-timer.usecase';
 
 @Injectable()
 export class StartSessionUseCase {

@@ -47,7 +47,7 @@ export class Badge extends Entity<BadgeProps> {
   }
 
   public inUse(): boolean {
-    return !!this.props.session;
+    return !!this.props.session && !this.props.session.endedAt;
   }
 
   static create(props: BadgeProps, id?: string) {

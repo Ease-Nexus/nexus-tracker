@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
 import {
@@ -22,6 +22,7 @@ export class DrizzleBadgeRepository {
       .innerJoin(tenantsTable, eq(badgesTable.tenantId, tenantsTable.id))
       .leftJoin(sessionsTable, eq(sessionsTable.badgeId, badgesTable.id))
       .where(eq(badgesTable.badgeValue, value))
+      .orderBy(desc(sessionsTable.endedAt))
       .execute();
 
     if (!row) {

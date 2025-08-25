@@ -45,15 +45,16 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
       if (t.isCompleted()) {
         t.complete(); // fecha bloco + complete()
         toFlush.push(t);
+        this.running.delete(t.id);
+        this.ws.completed(t);
+
         if (t.session) {
           await this.endSessionUseCase.end({
             id: t.session?.id,
-            tenantCode: t.tenantId,
+            tenantCode: t.tenantCode,
           });
         }
 
-        this.running.delete(t.id);
-        this.ws.completed(t);
         continue;
       }
 
@@ -86,7 +87,7 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
         if (timer.session) {
           await this.endSessionUseCase.end({
             id: timer.session?.id,
-            tenantCode: timer.tenantId,
+            tenantCode: timer.tenantCode,
           });
         }
 

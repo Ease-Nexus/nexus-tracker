@@ -13,19 +13,22 @@ import {
 import { CreateTimerUseCase } from '../timers/create-timer.usecase';
 
 @Injectable()
-export class StartSessionUseCase {
+export class StartSessionUsecase {
   constructor(
     private readonly badgeRepository: DrizzleBadgeRepository,
     private readonly sessionRepository: DrizzleSessionRepository,
     private readonly createTimerUseCase: CreateTimerUseCase,
   ) {}
 
-  async start({
-    customerId,
-    badge: badgeValue,
-    duration,
-    startImmediately,
-  }: StartSessionDto) {
+  async start(
+    tenantCode: string,
+    {
+      customerId,
+      badge: badgeValue,
+      duration,
+      startImmediately,
+    }: StartSessionDto,
+  ) {
     // Fetch badge by value
     const badge = await this.badgeRepository.getByValue(badgeValue);
 
@@ -40,7 +43,7 @@ export class StartSessionUseCase {
 
     // Create session entity
     const session = Session.create({
-      tenantId: '1a75d12d-b054-490c-9891-0ae50105f9d3',
+      tenantCode,
       customerId,
       badgeId: badge.id,
       badge,

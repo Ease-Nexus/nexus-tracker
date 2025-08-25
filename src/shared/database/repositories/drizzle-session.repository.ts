@@ -7,37 +7,39 @@ import {
   Tenant,
 } from 'src/core/domain';
 import { sessionsTable, tenantsTable } from '../drizzle-setup/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 @Injectable()
 export class DrizzleSessionRepository {
   constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
   async getAll({ tenantCode }: SessionsGetAllParamsDto): Promise<Session[]> {
-    const sessions = await this.db.query.sessionsTable.findMany({
-      with: {
-        tenant: true,
-      },
-      where: eq(tenantsTable.code, tenantCode),
-    });
+    const results = await this.db
+      .select({
+        session: sessionsTable,
+        tenant: tenantsTable,
+      })
+      .from(sessionsTable)
+      .innerJoin(tenantsTable, eq(sessionsTable.tenantId, tenantsTable.id))
+      .where(eq(tenantsTable.code, tenantCode));
 
-    return sessions.map((session) =>
+    return results.map(({ session, tenant }) =>
       Session.create(
         {
-          tenantId: session.tenantId,
+          tenantCode: session.tenantId,
           customerId: session.customerId ?? undefined,
           badgeId: session.badgeId,
           startedAt: session.startedAt ?? undefined,
           endedAt: session.endedAt ?? undefined,
           tenant: Tenant.create(
             {
-              code: session.tenant.code,
-              name: session.tenant.name,
-              createdAt: session.tenant.createdAt,
-              contactInfo: session.tenant.contactInfo ?? undefined,
-              description: session.tenant.description ?? undefined,
+              code: tenant.code,
+              name: tenant.name,
+              createdAt: tenant.createdAt,
+              contactInfo: tenant.contactInfo ?? undefined,
+              description: tenant.description ?? undefined,
             },
-            session.tenant.id,
+            tenant.id,
           ),
         },
         session.id,
@@ -49,33 +51,42 @@ export class DrizzleSessionRepository {
     tenantCode,
     id,
   }: SessionsGetByIdParamsDto): Promise<Session | undefined> {
-    const session = await this.db.query.sessionsTable.findFirst({
-      with: {
-        tenant: true,
-      },
-      where: and(eq(tenantsTable.code, tenantCode), eq(sessionsTable.id, id)),
-    });
+    const result = await this.db
+      .select({
+        session: sessionsTable,
+        tenant: tenantsTable,
+      })
+      .from(sessionsTable)
+      .innerJoin(tenantsTable, eq(sessionsTable.tenantId, tenantsTable.id))
+      .where(and(eq(tenantsTable.code, tenantCode), eq(sessionsTable.id, id)))
+      .limit(1);
 
-    if (!session) {
+    if (!result.length) {
+      return;
+    }
+
+    const { session, tenant } = result[0];
+
+    if (!session || !tenant) {
       return;
     }
 
     return Session.create(
       {
-        tenantId: session.tenantId,
+        tenantCode: session.tenantId,
         customerId: session.customerId ?? undefined,
         badgeId: session.badgeId,
         startedAt: session.startedAt ?? undefined,
         endedAt: session.endedAt ?? undefined,
         tenant: Tenant.create(
           {
-            code: session.tenant.code,
-            name: session.tenant.name,
-            createdAt: session.tenant.createdAt,
-            contactInfo: session.tenant.contactInfo ?? undefined,
-            description: session.tenant.description ?? undefined,
+            code: tenant.code,
+            name: tenant.name,
+            createdAt: tenant.createdAt,
+            contactInfo: tenant.contactInfo ?? undefined,
+            description: tenant.description ?? undefined,
           },
-          session.tenant.id,
+          tenant.id,
         ),
       },
       session.id,
@@ -83,26 +94,25 @@ export class DrizzleSessionRepository {
   }
 
   async create(session: Session) {
-    await this.db
-      .insert(sessionsTable)
-      .values({
-        id: session.id,
-        tenantId: session.tenantId,
-        badgeId: session.badgeId,
-        customerId: session.customerId ?? null,
-        startedAt: session.startedAt,
-        endedAt: session.endedAt ?? null,
-      })
-      .execute();
+    await this.db.transaction(async (tx) => {
+      await tx
+        .insert(sessionsTable)
+        .values({
+          id: session.id,
+          tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${session.tenantCode})`,
+          badgeId: session.badgeId,
+          customerId: session.customerId ?? null,
+          startedAt: session.startedAt,
+          endedAt: session.endedAt ?? null,
+        })
+        .execute();
+    });
   }
 
   async update(session: Session) {
     await this.db
       .update(sessionsTable)
       .set({
-        tenantId: session.tenantId,
-        badgeId: session.badgeId,
-        customerId: session.customerId ?? null,
         startedAt: session.startedAt,
         endedAt: session.endedAt ?? null,
       })

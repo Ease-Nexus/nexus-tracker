@@ -24,7 +24,7 @@ export class DrizzleTimerRepository {
     return rows.map(({ tenants, timers }) =>
       Timer.create(
         {
-          tenantId: timers.tenantId,
+          tenantCode: tenants.code,
           tenant: Tenant.create(
             {
               code: tenants.code,
@@ -65,7 +65,7 @@ export class DrizzleTimerRepository {
 
     return Timer.create(
       {
-        tenantId: timers.tenantId,
+        tenantCode: tenants.code,
         tenant: Tenant.create({
           code: tenants.code,
           name: tenants.name,
@@ -94,7 +94,7 @@ export class DrizzleTimerRepository {
       .insert(timersTable)
       .values({
         id: timer.id,
-        tenantId: timer.tenantId,
+        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${timer.tenantCode})`,
         sessionId: timer.sessionId,
         duration: timer.duration,
         elapsed: timer.elapsed,
@@ -109,7 +109,7 @@ export class DrizzleTimerRepository {
     await this.db
       .update(timersTable)
       .set({
-        tenantId: timer.tenantId,
+        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${timer.tenantCode})`,
         sessionId: timer.sessionId,
         duration: timer.duration,
         elapsed: timer.elapsed,
@@ -158,8 +158,6 @@ export class DrizzleTimerRepository {
     await this.db
       .update(timersTable)
       .set({
-        tenantId: this.caseForColumn('tenantId', timers),
-        sessionId: this.caseForColumn('sessionId', timers),
         duration: this.caseForColumn('duration', timers),
         elapsed: this.caseForColumn('elapsed', timers),
         status: this.caseForColumn('status', timers),

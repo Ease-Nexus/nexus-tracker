@@ -9,7 +9,7 @@ export interface SessionsGetByIdParamsDto {
 
 export type SessionsEndParams = SessionsGetByIdParamsDto;
 
-export interface StartSessionDto {
+export class StartSessionDto {
   customerId?: string;
   badge: string;
   duration: number;

@@ -27,7 +27,7 @@ export interface TimerHistoryEntry {
 }
 
 export interface TimerProps {
-  tenantId: string;
+  tenantCode: string;
   tenant?: Tenant;
   sessionId: string;
   session?: Session;
@@ -46,8 +46,8 @@ export class Timer extends Entity<TimerProps> {
     super(props, id);
   }
 
-  get tenantId(): string {
-    return this.props.tenantId;
+  get tenantCode(): string {
+    return this.props.tenantCode;
   }
 
   get tenant(): Tenant | undefined {
@@ -197,7 +197,7 @@ export class Timer extends Entity<TimerProps> {
     const { tenant } = session;
 
     const timer = this.create({
-      tenantId: session.tenantId,
+      tenantCode: session.tenantCode,
       tenant,
       sessionId: session.id,
       session,

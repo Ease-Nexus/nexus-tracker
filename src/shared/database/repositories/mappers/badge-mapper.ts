@@ -35,7 +35,7 @@ export class BadgeMapper {
         session: sessions
           ? Session.create(
               {
-                tenantId: sessions.tenantId,
+                tenantCode: sessions.tenantId,
                 badgeId: sessions.badgeId,
                 startedAt: sessions.startedAt ?? undefined,
                 endedAt: sessions.endedAt ?? undefined,

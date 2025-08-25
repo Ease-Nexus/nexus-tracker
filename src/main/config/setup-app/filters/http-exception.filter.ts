@@ -8,6 +8,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { env } from '../../env';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class ExceptionResponseDto {
+  @ApiProperty() statusCode: number;
+  @ApiProperty() message: string;
+  @ApiProperty() name: string;
+  @ApiProperty() timestamp: string;
+  @ApiProperty() stack?: string;
+}
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -21,7 +30,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error(`Exception: ${exception.message}, status: ${status}`);
 
-    const error: object = {
+    const error: ExceptionResponseDto = {
       statusCode: status,
       name: exception.name,
       message: exception.message,

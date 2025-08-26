@@ -3,34 +3,38 @@ import { Injectable } from '@nestjs/common';
 import {
   DrizzleBadgeRepository,
   DrizzleSessionRepository,
+  DrizzleTenantRepository,
 } from 'src/shared/database/repositories';
 import {
   BadgeNotFoundException,
   Session,
   StartSessionDto,
+  TenantNotFoundException,
   UnavailableBadgeException,
 } from '../../../domain';
 import { CreateTimerUseCase } from '../timers/create-timer.usecase';
 
 @Injectable()
-export class StartSessionUsecase {
+export class CreateSessionUsecase {
   constructor(
+    private readonly tenantRepository: DrizzleTenantRepository,
     private readonly badgeRepository: DrizzleBadgeRepository,
     private readonly sessionRepository: DrizzleSessionRepository,
     private readonly createTimerUseCase: CreateTimerUseCase,
   ) {}
 
-  async start(
+  async create(
     tenantCode: string,
-    {
-      customerId,
-      badge: badgeValue,
-      duration,
-      startImmediately,
-    }: StartSessionDto,
+    { customerId, badgeValue, duration, startImmediately }: StartSessionDto,
   ) {
+    const tenant = await this.tenantRepository.getByCode(tenantCode);
+
+    if (!tenant) {
+      throw new TenantNotFoundException();
+    }
+
     // Fetch badge by value
-    const badge = await this.badgeRepository.getByValue(badgeValue);
+    const badge = await this.badgeRepository.getByValue(tenant.id, badgeValue);
 
     if (!badge) {
       throw new BadgeNotFoundException();
@@ -43,7 +47,7 @@ export class StartSessionUsecase {
 
     // Create session entity
     const session = Session.create({
-      tenantCode,
+      tenantId: badge.tenantId,
       customerId,
       badgeId: badge.id,
       badge,

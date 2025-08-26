@@ -1,12 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import {
-  badgesTable,
-  sessionsTable,
-  tenantsTable,
-} from '../drizzle-setup/schema';
+import { badgesTable, sessionsTable } from '../drizzle-setup/schema';
 import { BadgeMapper } from './mappers';
 
 import { Badge } from 'src/core/domain';
@@ -15,13 +11,23 @@ import { Badge } from 'src/core/domain';
 export class DrizzleBadgeRepository {
   constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
-  async getByValue(value: string): Promise<Badge | undefined> {
+  async getByValue(
+    tenantId: string,
+    value: string,
+  ): Promise<Badge | undefined> {
     const [row] = await this.db
-      .select()
+      .select({
+        badge: badgesTable,
+        session: sessionsTable,
+      })
       .from(badgesTable)
-      .innerJoin(tenantsTable, eq(badgesTable.tenantId, tenantsTable.id))
       .leftJoin(sessionsTable, eq(sessionsTable.badgeId, badgesTable.id))
-      .where(eq(badgesTable.badgeValue, value))
+      .where(
+        and(
+          eq(badgesTable.tenantId, tenantId),
+          eq(badgesTable.badgeValue, value),
+        ),
+      )
       .orderBy(desc(sessionsTable.endedAt))
       .execute();
 
@@ -29,12 +35,11 @@ export class DrizzleBadgeRepository {
       return;
     }
 
-    const { badges, tenants, sessions } = row;
+    const { badge, session } = row;
 
     return BadgeMapper.toDomain({
-      badges,
-      tenants,
-      sessions, // Handle optional session data
+      badge,
+      session, // Handle optional session data
     });
   }
 }

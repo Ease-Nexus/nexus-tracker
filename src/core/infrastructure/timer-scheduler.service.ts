@@ -51,7 +51,7 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
         if (t.session) {
           await this.endSessionUseCase.end({
             id: t.session?.id,
-            tenantCode: t.tenantCode,
+            tenantId: t.tenantId,
           });
         }
 
@@ -87,7 +87,7 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
         if (timer.session) {
           await this.endSessionUseCase.end({
             id: timer.session?.id,
-            tenantCode: timer.tenantCode,
+            tenantId: timer.tenantId,
           });
         }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SessionsEndParams } from 'src/core/domain';
 import { DrizzleSessionRepository } from 'src/shared';
 
@@ -6,14 +6,14 @@ import { DrizzleSessionRepository } from 'src/shared';
 export class EndSessionUsecase {
   constructor(private readonly sessionRepository: DrizzleSessionRepository) {}
 
-  async end({ tenantCode, id }: SessionsEndParams) {
+  async end({ tenantId: tenantCode, id }: SessionsEndParams) {
     const session = await this.sessionRepository.getById({
-      tenantCode,
+      tenantId: tenantCode,
       id,
     });
 
     if (!session) {
-      throw new Error('Session not foundd');
+      throw new NotFoundException('Session not foundd');
     }
 
     session.end();

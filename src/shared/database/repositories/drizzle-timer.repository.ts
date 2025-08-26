@@ -1,9 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, inArray, SQL, sql } from 'drizzle-orm';
 
-import { Tenant, Timer, TimerStatus } from 'src/core/domain';
+import { Session, Tenant, Timer, TimerStatus } from 'src/core/domain';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import { tenantsTable, timersTable } from '../drizzle-setup/schema';
+import {
+  sessionsTable,
+  tenantsTable,
+  timersTable,
+} from '../drizzle-setup/schema';
 
 @Injectable()
 export class DrizzleTimerRepository {
@@ -18,13 +22,14 @@ export class DrizzleTimerRepository {
       .select()
       .from(timersTable)
       .innerJoin(tenantsTable, eq(timersTable.tenantId, tenantsTable.id))
+      .innerJoin(sessionsTable, eq(timersTable.sessionId, sessionsTable.id))
       .where(whereClause)
       .execute();
 
-    return rows.map(({ tenants, timers }) =>
+    return rows.map(({ tenants, timers, sessions }) =>
       Timer.create(
         {
-          tenantCode: tenants.code,
+          tenantId: tenants.code,
           tenant: Tenant.create(
             {
               code: tenants.code,
@@ -36,7 +41,16 @@ export class DrizzleTimerRepository {
             tenants.id,
           ),
           sessionId: timers.sessionId,
-
+          session: Session.create(
+            {
+              tenantId: tenants.code,
+              badgeId: sessions.badgeId,
+              customerId: sessions.customerId ?? undefined,
+              startedAt: sessions.startedAt ?? undefined,
+              endedAt: sessions.endedAt ?? undefined,
+            },
+            sessions.id,
+          ),
           duration: timers.duration,
           elapsed: timers.elapsed,
           history: timers.history.map((h) => ({
@@ -65,7 +79,7 @@ export class DrizzleTimerRepository {
 
     return Timer.create(
       {
-        tenantCode: tenants.code,
+        tenantId: tenants.code,
         tenant: Tenant.create({
           code: tenants.code,
           name: tenants.name,
@@ -94,7 +108,7 @@ export class DrizzleTimerRepository {
       .insert(timersTable)
       .values({
         id: timer.id,
-        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${timer.tenantCode})`,
+        tenantId: timer.tenantId,
         sessionId: timer.sessionId,
         duration: timer.duration,
         elapsed: timer.elapsed,
@@ -109,7 +123,7 @@ export class DrizzleTimerRepository {
     await this.db
       .update(timersTable)
       .set({
-        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${timer.tenantCode})`,
+        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${timer.tenantId})`,
         sessionId: timer.sessionId,
         duration: timer.duration,
         elapsed: timer.elapsed,

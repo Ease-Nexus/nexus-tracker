@@ -1,9 +1,10 @@
 export interface SessionsGetAllParamsDto {
-  tenantCode: string;
+  tenantId: string;
+  isOpen: boolean;
 }
 
 export interface SessionsGetByIdParamsDto {
-  tenantCode: string;
+  tenantId: string;
   id: string;
 }
 
@@ -11,7 +12,7 @@ export type SessionsEndParams = SessionsGetByIdParamsDto;
 
 export class StartSessionDto {
   customerId?: string;
-  badge: string;
+  badgeValue: string;
   duration: number;
   startImmediately?: boolean;
 }

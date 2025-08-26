@@ -4,7 +4,7 @@ import { Badge } from './badge.entity';
 import { Customer } from './customer.entity';
 
 export interface SessionProps {
-  tenantCode: string;
+  tenantId: string;
   tenant?: Tenant;
   customerId?: string;
   customer?: Customer;
@@ -18,8 +18,8 @@ export class Session extends Entity<SessionProps> {
     super(props, id);
   }
 
-  get tenantCode(): string {
-    return this.props.tenantCode;
+  get tenantId(): string {
+    return this.props.tenantId;
   }
 
   get tenant(): Tenant | undefined {
@@ -52,6 +52,10 @@ export class Session extends Entity<SessionProps> {
 
   end() {
     this.props.endedAt = new Date();
+  }
+
+  isOpen(): boolean {
+    return !this.props.endedAt;
   }
 
   static create(props: SessionProps, id?: string): Session {

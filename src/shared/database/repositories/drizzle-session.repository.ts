@@ -4,93 +4,77 @@ import {
   Session,
   SessionsGetAllParamsDto,
   SessionsGetByIdParamsDto,
-  Tenant,
 } from 'src/core/domain';
-import { sessionsTable, tenantsTable } from '../drizzle-setup/schema';
-import { and, eq, sql } from 'drizzle-orm';
+import {
+  badgesTable,
+  sessionsTable,
+  tenantsTable,
+} from '../drizzle-setup/schema';
+import { and, eq, isNull } from 'drizzle-orm';
+import { SessionMapper } from './mappers';
 
 @Injectable()
 export class DrizzleSessionRepository {
   constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
-  async getAll({ tenantCode }: SessionsGetAllParamsDto): Promise<Session[]> {
+  async getAll({
+    tenantId,
+    isOpen,
+  }: SessionsGetAllParamsDto): Promise<Session[]> {
     const results = await this.db
       .select({
         session: sessionsTable,
         tenant: tenantsTable,
+        badge: badgesTable,
       })
       .from(sessionsTable)
       .innerJoin(tenantsTable, eq(sessionsTable.tenantId, tenantsTable.id))
-      .where(eq(tenantsTable.code, tenantCode));
+      .innerJoin(badgesTable, eq(sessionsTable.badgeId, badgesTable.id))
+      .where(
+        and(
+          eq(sessionsTable.tenantId, tenantId),
+          isOpen ? isNull(sessionsTable.endedAt) : undefined,
+        ),
+      );
 
-    return results.map(({ session, tenant }) =>
-      Session.create(
-        {
-          tenantCode: session.tenantId,
-          customerId: session.customerId ?? undefined,
-          badgeId: session.badgeId,
-          startedAt: session.startedAt ?? undefined,
-          endedAt: session.endedAt ?? undefined,
-          tenant: Tenant.create(
-            {
-              code: tenant.code,
-              name: tenant.name,
-              createdAt: tenant.createdAt,
-              contactInfo: tenant.contactInfo ?? undefined,
-              description: tenant.description ?? undefined,
-            },
-            tenant.id,
-          ),
-        },
-        session.id,
-      ),
+    return results.map(({ session, tenant, badge }) =>
+      SessionMapper.toDomain({
+        session,
+        tenant,
+        badge,
+      }),
     );
   }
 
   async getById({
-    tenantCode,
+    tenantId,
     id,
   }: SessionsGetByIdParamsDto): Promise<Session | undefined> {
     const result = await this.db
       .select({
         session: sessionsTable,
         tenant: tenantsTable,
+        badge: badgesTable,
       })
       .from(sessionsTable)
       .innerJoin(tenantsTable, eq(sessionsTable.tenantId, tenantsTable.id))
-      .where(and(eq(tenantsTable.code, tenantCode), eq(sessionsTable.id, id)))
+      .innerJoin(badgesTable, eq(sessionsTable.badgeId, badgesTable.id))
+      .where(
+        and(eq(sessionsTable.tenantId, tenantId), eq(sessionsTable.id, id)),
+      )
       .limit(1);
 
     if (!result.length) {
       return;
     }
 
-    const { session, tenant } = result[0];
+    const { session, tenant, badge } = result[0];
 
-    if (!session || !tenant) {
-      return;
-    }
-
-    return Session.create(
-      {
-        tenantCode: session.tenantId,
-        customerId: session.customerId ?? undefined,
-        badgeId: session.badgeId,
-        startedAt: session.startedAt ?? undefined,
-        endedAt: session.endedAt ?? undefined,
-        tenant: Tenant.create(
-          {
-            code: tenant.code,
-            name: tenant.name,
-            createdAt: tenant.createdAt,
-            contactInfo: tenant.contactInfo ?? undefined,
-            description: tenant.description ?? undefined,
-          },
-          tenant.id,
-        ),
-      },
-      session.id,
-    );
+    return SessionMapper.toDomain({
+      session,
+      tenant,
+      badge,
+    });
   }
 
   async create(session: Session) {
@@ -99,7 +83,7 @@ export class DrizzleSessionRepository {
         .insert(sessionsTable)
         .values({
           id: session.id,
-          tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${session.tenantCode})`,
+          tenantId: session.tenantId,
           badgeId: session.badgeId,
           customerId: session.customerId ?? null,
           startedAt: session.startedAt,

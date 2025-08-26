@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { SessionsController } from './api/sessions.controller';
 
-import { StartSessionUsecase } from './application/commands/sessions/start-session.usecase';
+import { CreateSessionUsecase } from './application/commands/sessions/create-session.usecase';
 
 import { DatabaseModule } from 'src/shared/database';
 import {
   CreateTimerUseCase,
   EndSessionUsecase,
+  GetSessionsUseCase,
   GetTimersUseCase,
   PauseTimerUseCase,
   StartTimerUseCase,
@@ -18,13 +19,14 @@ import { TimersController } from './api';
   imports: [DatabaseModule],
   providers: [
     TimerGateway,
-    StartSessionUsecase,
+    GetSessionsUseCase,
+    CreateSessionUsecase,
     EndSessionUsecase,
     TimerSchedulerService,
     CreateTimerUseCase,
     StartTimerUseCase,
     PauseTimerUseCase,
-    StartSessionUsecase,
+    CreateSessionUsecase,
     GetTimersUseCase,
   ],
   controllers: [SessionsController, TimersController],

@@ -1,15 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import {
-  Session,
-  SessionsGetAllParamsDto,
-  SessionsGetByIdParamsDto,
-} from 'src/core/domain';
-import {
-  badgesTable,
-  sessionsTable,
-  tenantsTable,
-} from '../drizzle-setup/schema';
+import { Session, SessionsGetAllParamsDto, SessionsGetByIdParamsDto } from 'src/core/domain';
+import { badgesTable, sessionsTable, tenantsTable } from '../drizzle-setup/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { SessionMapper } from './mappers';
 
@@ -17,10 +9,7 @@ import { SessionMapper } from './mappers';
 export class DrizzleSessionRepository {
   constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
-  async getAll({
-    tenantId,
-    isOpen,
-  }: SessionsGetAllParamsDto): Promise<Session[]> {
+  async getAll({ tenantId, isOpen }: SessionsGetAllParamsDto): Promise<Session[]> {
     const results = await this.db
       .select({
         session: sessionsTable,
@@ -30,12 +19,7 @@ export class DrizzleSessionRepository {
       .from(sessionsTable)
       .innerJoin(tenantsTable, eq(sessionsTable.tenantId, tenantsTable.id))
       .innerJoin(badgesTable, eq(sessionsTable.badgeId, badgesTable.id))
-      .where(
-        and(
-          eq(sessionsTable.tenantId, tenantId),
-          isOpen ? isNull(sessionsTable.endedAt) : undefined,
-        ),
-      );
+      .where(and(eq(sessionsTable.tenantId, tenantId), isOpen ? isNull(sessionsTable.endedAt) : undefined));
 
     return results.map(({ session, tenant, badge }) =>
       SessionMapper.toDomain({
@@ -46,10 +30,7 @@ export class DrizzleSessionRepository {
     );
   }
 
-  async getById({
-    tenantId,
-    id,
-  }: SessionsGetByIdParamsDto): Promise<Session | undefined> {
+  async getById({ tenantId, id }: SessionsGetByIdParamsDto): Promise<Session | undefined> {
     const result = await this.db
       .select({
         session: sessionsTable,
@@ -59,9 +40,7 @@ export class DrizzleSessionRepository {
       .from(sessionsTable)
       .innerJoin(tenantsTable, eq(sessionsTable.tenantId, tenantsTable.id))
       .innerJoin(badgesTable, eq(sessionsTable.badgeId, badgesTable.id))
-      .where(
-        and(eq(sessionsTable.tenantId, tenantId), eq(sessionsTable.id, id)),
-      )
+      .where(and(eq(sessionsTable.tenantId, tenantId), eq(sessionsTable.id, id)))
       .limit(1);
 
     if (!result.length) {

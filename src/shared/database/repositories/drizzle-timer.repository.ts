@@ -3,11 +3,7 @@ import { eq, inArray, SQL, sql } from 'drizzle-orm';
 
 import { Session, Tenant, Timer, TimerStatus } from 'src/core/domain';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import {
-  sessionsTable,
-  tenantsTable,
-  timersTable,
-} from '../drizzle-setup/schema';
+import { sessionsTable, tenantsTable, timersTable } from '../drizzle-setup/schema';
 
 @Injectable()
 export class DrizzleTimerRepository {

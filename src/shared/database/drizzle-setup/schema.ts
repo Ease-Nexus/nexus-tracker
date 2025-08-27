@@ -55,12 +55,7 @@ export const badgesTable = pgTable(
     isFixed: boolean('isFixed').notNull().default(false),
   },
   (table) => {
-    return [
-      uniqueIndex('badges_tenantId_badgeValue_idx').on(
-        table.tenantId,
-        table.badgeValue,
-      ),
-    ];
+    return [uniqueIndex('badges_tenantId_badgeValue_idx').on(table.tenantId, table.badgeValue)];
   },
 );
 
@@ -79,9 +74,7 @@ export const groupsTable = pgTable(
     createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true }),
   },
   (table) => {
-    return [
-      uniqueIndex('groups_tenantId_name_idx').on(table.tenantId, table.name),
-    ];
+    return [uniqueIndex('groups_tenantId_name_idx').on(table.tenantId, table.name)];
   },
 );
 
@@ -98,9 +91,7 @@ export const packagesTable = pgTable(
     enabled: boolean('enabled').notNull().default(true),
     createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true }),
   },
-  (table) => [
-    uniqueIndex('packages_tenantId_name_idx').on(table.tenantId, table.name),
-  ],
+  (table) => [uniqueIndex('packages_tenantId_name_idx').on(table.tenantId, table.name)],
 );
 
 export const customersTable = pgTable(
@@ -120,10 +111,7 @@ export const customersTable = pgTable(
   },
   (table) => [
     // Índice composto para busca por securityNumber, único por inquilino
-    uniqueIndex('customers_tenantId_securityNumber_idx').on(
-      table.tenantId,
-      table.securityNumber,
-    ),
+    uniqueIndex('customers_tenantId_securityNumber_idx').on(table.tenantId, table.securityNumber),
     // Índice na chave estrangeira para otimizar joins com a tabela groups
     index('customers_groupId_idx').on(table.groupId),
     // Índice na chave estrangeira para crachás fixos
@@ -148,9 +136,7 @@ export const customerPackagesTable = pgTable(
       mode: 'date',
       withTimezone: true,
     }).notNull(),
-    createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'date', withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('customer_packages_customerId_idx').on(table.customerId),
@@ -261,45 +247,39 @@ export const packagesRelations = relations(packagesTable, ({ many, one }) => ({
   customerPackages: many(customerPackagesTable),
 }));
 
-export const customersRelations = relations(
-  customersTable,
-  ({ one, many }) => ({
-    tenant: one(tenantsTable, {
-      fields: [customersTable.tenantId],
-      references: [tenantsTable.id],
-    }),
-    group: one(groupsTable, {
-      fields: [customersTable.groupId],
-      references: [groupsTable.id],
-    }),
-    fixedBadge: one(badgesTable, {
-      fields: [customersTable.fixedBadgeId],
-      references: [badgesTable.id],
-    }),
-    sessions: many(sessionsTable),
-    customerPackages: many(customerPackagesTable),
+export const customersRelations = relations(customersTable, ({ one, many }) => ({
+  tenant: one(tenantsTable, {
+    fields: [customersTable.tenantId],
+    references: [tenantsTable.id],
   }),
-);
+  group: one(groupsTable, {
+    fields: [customersTable.groupId],
+    references: [groupsTable.id],
+  }),
+  fixedBadge: one(badgesTable, {
+    fields: [customersTable.fixedBadgeId],
+    references: [badgesTable.id],
+  }),
+  sessions: many(sessionsTable),
+  customerPackages: many(customerPackagesTable),
+}));
 
-export const customerPackagesRelations = relations(
-  customerPackagesTable,
-  ({ one }) => ({
-    tenant: one(tenantsTable, {
-      fields: [customerPackagesTable.tenantId],
-      references: [tenantsTable.id],
-    }),
-    // Cada vínculo pertence a um cliente
-    customer: one(customersTable, {
-      fields: [customerPackagesTable.customerId],
-      references: [customersTable.id],
-    }),
-    // Cada vínculo referencia um pacote
-    package: one(packagesTable, {
-      fields: [customerPackagesTable.packageId],
-      references: [packagesTable.id],
-    }),
+export const customerPackagesRelations = relations(customerPackagesTable, ({ one }) => ({
+  tenant: one(tenantsTable, {
+    fields: [customerPackagesTable.tenantId],
+    references: [tenantsTable.id],
   }),
-);
+  // Cada vínculo pertence a um cliente
+  customer: one(customersTable, {
+    fields: [customerPackagesTable.customerId],
+    references: [customersTable.id],
+  }),
+  // Cada vínculo referencia um pacote
+  package: one(packagesTable, {
+    fields: [customerPackagesTable.packageId],
+    references: [packagesTable.id],
+  }),
+}));
 
 export const badgesRelations = relations(badgesTable, ({ many, one }) => ({
   tenant: one(tenantsTable, {
@@ -340,16 +320,13 @@ export const timersRelations = relations(timersTable, ({ one }) => ({
   }),
 }));
 
-export const transactionsRelations = relations(
-  transactionsTable,
-  ({ one }) => ({
-    tenant: one(tenantsTable, {
-      fields: [transactionsTable.tenantId],
-      references: [tenantsTable.id],
-    }),
-    group: one(groupsTable, {
-      fields: [transactionsTable.groupId],
-      references: [groupsTable.id],
-    }),
+export const transactionsRelations = relations(transactionsTable, ({ one }) => ({
+  tenant: one(tenantsTable, {
+    fields: [transactionsTable.tenantId],
+    references: [tenantsTable.id],
   }),
-);
+  group: one(groupsTable, {
+    fields: [transactionsTable.groupId],
+    references: [groupsTable.id],
+  }),
+}));

@@ -1,9 +1,5 @@
 import { Badge } from 'src/core/domain';
-import {
-  tenantsTable,
-  badgesTable,
-  sessionsTable,
-} from '../../drizzle-setup/schema';
+import { tenantsTable, badgesTable, sessionsTable } from '../../drizzle-setup/schema';
 import { TenantMapper } from './tenant-mapper';
 import { SessionMapper } from './session-mapper';
 

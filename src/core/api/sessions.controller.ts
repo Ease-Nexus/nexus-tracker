@@ -1,37 +1,36 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Param,
-  ParseBoolPipe,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, ParseBoolPipe, Post, Query } from '@nestjs/common';
 import { CreateSessionUsecase } from '../application/commands/sessions/create-session.usecase';
 import { StartSessionDto } from '../domain/dtos';
-import { EndSessionUsecase, GetSessionsUseCase } from '../application';
-import {
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiQuery,
-} from '@nestjs/swagger';
-import { ExceptionResponseDto } from 'src/main/config';
+import { EndSessionUsecase, GetSessionByIdUsecase, GetSessionsUseCase } from '../application';
 
 @Controller('sessions')
 export class SessionsController {
   constructor(
     private readonly getSessionsUseCase: GetSessionsUseCase,
+    private readonly getSessionsByIdUsecase: GetSessionByIdUsecase,
     private readonly startSessionUsecase: CreateSessionUsecase,
     private readonly endSessionUsecase: EndSessionUsecase,
   ) {}
 
+  @Get(':sessionId')
+  async getSession(@Headers('x-tenant-code') tenantCode: string, @Param('sessionId') sessionId: string) {
+    const session = await this.getSessionsByIdUsecase.getSession(tenantCode, sessionId);
+
+    return {
+      id: session.id,
+      customerId: session.customerId,
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+      isOpen: session.isOpen(),
+      badge: {
+        type: session.badge?.badgeType,
+        value: session.badge?.badgeValue,
+        description: session.badge?.description,
+      },
+    };
+  }
+
   @Get()
-  @ApiQuery({
-    name: 'isOpen',
-    required: false,
-    type: Boolean,
-  })
   async getSessions(
     @Headers('x-tenant-code') tenantCode: string,
     @Query(
@@ -42,10 +41,7 @@ export class SessionsController {
     )
     isOpen?: boolean,
   ) {
-    const sessions = await this.getSessionsUseCase.getSessions(
-      tenantCode,
-      isOpen,
-    );
+    const sessions = await this.getSessionsUseCase.getSessions(tenantCode, isOpen);
 
     return sessions.map((session) => ({
       id: session.id,
@@ -62,21 +58,7 @@ export class SessionsController {
   }
 
   @Post()
-  @ApiCreatedResponse({
-    description: 'Session created successfully',
-  })
-  @ApiNotFoundResponse({
-    description: 'Badge not found',
-    type: ExceptionResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: 'Customer not found',
-    type: ExceptionResponseDto,
-  })
-  async createSession(
-    @Headers('x-tenant-code') tenantCode: string,
-    @Body() body: StartSessionDto,
-  ) {
+  async createSession(@Headers('x-tenant-code') tenantCode: string, @Body() body: StartSessionDto) {
     const { customerId, badgeValue, duration, startImmediately } = body;
 
     await this.startSessionUsecase.create(tenantCode, {
@@ -88,10 +70,7 @@ export class SessionsController {
   }
 
   @Post(':sessionId/end')
-  async endSession(
-    @Headers() tenantCode: string,
-    @Param('sessionId') sessionId: string,
-  ) {
+  async endSession(@Headers() tenantCode: string, @Param('sessionId') sessionId: string) {
     await this.endSessionUsecase.end({
       tenantId: tenantCode,
       id: sessionId,

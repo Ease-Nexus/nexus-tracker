@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TenantNotFoundException } from 'src/core/domain';
-import {
-  DrizzleSessionRepository,
-  DrizzleTenantRepository,
-} from 'src/shared/database';
+import { DrizzleSessionRepository, DrizzleTenantRepository } from 'src/shared/database';
 
 @Injectable()
 export class GetSessionsUseCase {

@@ -7,6 +7,7 @@ import { DatabaseModule } from 'src/shared/database';
 import {
   CreateTimerUseCase,
   EndSessionUsecase,
+  GetSessionByIdUsecase,
   GetSessionsUseCase,
   GetTimersUseCase,
   PauseTimerUseCase,
@@ -20,6 +21,7 @@ import { TimersController } from './api';
   providers: [
     TimerGateway,
     GetSessionsUseCase,
+    GetSessionByIdUsecase,
     CreateSessionUsecase,
     EndSessionUsecase,
     TimerSchedulerService,

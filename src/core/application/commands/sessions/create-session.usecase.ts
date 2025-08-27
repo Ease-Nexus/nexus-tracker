@@ -23,10 +23,7 @@ export class CreateSessionUsecase {
     private readonly createTimerUseCase: CreateTimerUseCase,
   ) {}
 
-  async create(
-    tenantCode: string,
-    { customerId, badgeValue, duration, startImmediately }: StartSessionDto,
-  ) {
+  async create(tenantCode: string, { customerId, badgeValue, duration, startImmediately }: StartSessionDto) {
     const tenant = await this.tenantRepository.getByCode(tenantCode);
 
     if (!tenant) {

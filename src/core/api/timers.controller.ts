@@ -1,11 +1,6 @@
 import { Body, Controller, Get, Param, Put } from '@nestjs/common';
 
-import {
-  GetTimersUseCase,
-  PauseTimerUseCase,
-  StartTimerUseCase,
-  CreateTimerUseCase,
-} from '../application';
+import { GetTimersUseCase, PauseTimerUseCase, StartTimerUseCase, CreateTimerUseCase } from '../application';
 import { mapToTimerResultDto } from '../domain';
 
 @Controller('timers')

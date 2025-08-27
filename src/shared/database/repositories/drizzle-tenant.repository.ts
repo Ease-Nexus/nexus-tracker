@@ -1,9 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  DRIZLE_DB,
-  tenantsTable,
-  type DrizzleDatabase,
-} from '../drizzle-setup';
+import { DRIZLE_DB, tenantsTable, type DrizzleDatabase } from '../drizzle-setup';
 import { eq } from 'drizzle-orm';
 import { TenantMapper } from './mappers';
 
@@ -15,10 +11,7 @@ export class DrizzleTenantRepository {
   ) {}
 
   async getByCode(tenantCode: string) {
-    const result = await this.db
-      .select()
-      .from(tenantsTable)
-      .where(eq(tenantsTable.code, tenantCode));
+    const result = await this.db.select().from(tenantsTable).where(eq(tenantsTable.code, tenantCode));
 
     if (result.length === 0) {
       return undefined;

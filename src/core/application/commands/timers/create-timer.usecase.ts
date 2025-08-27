@@ -11,11 +11,7 @@ export class CreateTimerUseCase {
     private readonly timerSchedulerService: TimerSchedulerService,
   ) {}
 
-  async create(
-    session: Session,
-    durationMinutes: number,
-    startImmediately?: boolean,
-  ) {
+  async create(session: Session, durationMinutes: number, startImmediately?: boolean) {
     const timer = Timer.createNew(session, durationMinutes);
 
     if (startImmediately) {

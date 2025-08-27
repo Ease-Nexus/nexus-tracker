@@ -16,11 +16,6 @@ import { DrizzleProvider } from './drizzle-setup';
     DrizzleBadgeRepository,
     DrizzleSessionRepository,
   ],
-  exports: [
-    DrizzleTenantRepository,
-    DrizzleTimerRepository,
-    DrizzleBadgeRepository,
-    DrizzleSessionRepository,
-  ],
+  exports: [DrizzleTenantRepository, DrizzleTimerRepository, DrizzleBadgeRepository, DrizzleSessionRepository],
 })
 export class DatabaseModule {}

@@ -1,10 +1,9 @@
 {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.rulers": [
-        120
-    ],
-    "[typescript]": {
-        "editor.formatOnSaveMode": "file"
-    },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "material-icon-theme.activeIconPack": "nest",
+  "editor.rulers": [120],
+  "[typescript]": {
+    "editor.formatOnSaveMode": "file"
+  }
 }

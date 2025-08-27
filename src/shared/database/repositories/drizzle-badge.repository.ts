@@ -11,10 +11,7 @@ import { Badge } from 'src/core/domain';
 export class DrizzleBadgeRepository {
   constructor(@Inject(DRIZLE_DB) private readonly db: DrizzleDatabase) {}
 
-  async getByValue(
-    tenantId: string,
-    value: string,
-  ): Promise<Badge | undefined> {
+  async getByValue(tenantId: string, value: string): Promise<Badge | undefined> {
     const [row] = await this.db
       .select({
         badge: badgesTable,
@@ -22,12 +19,7 @@ export class DrizzleBadgeRepository {
       })
       .from(badgesTable)
       .leftJoin(sessionsTable, eq(sessionsTable.badgeId, badgesTable.id))
-      .where(
-        and(
-          eq(badgesTable.tenantId, tenantId),
-          eq(badgesTable.badgeValue, value),
-        ),
-      )
+      .where(and(eq(badgesTable.tenantId, tenantId), eq(badgesTable.badgeValue, value)))
       .orderBy(desc(sessionsTable.endedAt))
       .execute();
 

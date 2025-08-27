@@ -6,10 +6,6 @@ export class GetTimersUseCase {
   constructor(private readonly timerRepository: DrizzleTimerRepository) {}
 
   async getTimers() {
-    return await this.timerRepository.getByStatus([
-      'CREATED',
-      'RUNNING',
-      'PAUSED',
-    ]);
+    return await this.timerRepository.getByStatus(['CREATED', 'RUNNING', 'PAUSED']);
   }
 }

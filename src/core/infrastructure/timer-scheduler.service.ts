@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
 import { Timer } from '../domain';
 import { TimerGateway } from './timer.gateway';
@@ -102,9 +97,7 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.loop = setInterval(() => void this.tick(), TICK_MS);
-    this.logger.log(
-      `Timer loop started: tick=${TICK_MS}ms flush>=${FLUSH_MS}ms`,
-    );
+    this.logger.log(`Timer loop started: tick=${TICK_MS}ms flush>=${FLUSH_MS}ms`);
   }
 
   onModuleDestroy() {

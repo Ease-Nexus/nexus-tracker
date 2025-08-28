@@ -1,15 +1,21 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { env } from '../../env';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class ExceptionResponseDto {
-  @ApiProperty() statusCode: number;
-  @ApiProperty() message: string;
-  @ApiProperty() name: string;
-  @ApiProperty() timestamp: string;
-  @ApiProperty() stack?: string;
+  statusCode: number;
+  message: string;
+  name: string;
+  cause?: any;
+  timestamp: string;
+  stack?: string;
 }
 
 @Catch(HttpException)
@@ -28,6 +34,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: status,
       name: exception.name,
       message: exception.message,
+      cause: exception.cause,
       timestamp: new Date().toISOString(),
     };
 

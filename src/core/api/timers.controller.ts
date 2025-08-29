@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Headers,
   Put,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,16 +15,17 @@ import {
 } from '../application';
 import { mapToTimerResultDto } from '../domain';
 import { ZodValidationInterceptor } from 'src/main/interceptors';
-import z from 'zod';
+import { z } from 'zod';
+import { tenantValidationInterceptor } from './interceptors';
+const startTimerSchema = z.object({
+  timerId: z.string(),
+});
+const pauseTimerSchema = z.object({
+  timerId: z.string(),
+});
 
 @Controller('timers')
-@UseInterceptors(
-  new ZodValidationInterceptor({
-    headerSchema: z.object({
-      'x-tenant-code': z.string(),
-    }),
-  }),
-)
+@UseInterceptors(tenantValidationInterceptor)
 export class TimersController {
   constructor(
     private readonly startTimerUseCase: StartTimerUseCase,
@@ -37,13 +39,32 @@ export class TimersController {
     return timers.map((timer) => mapToTimerResultDto(timer));
   }
 
-  @Put('start/:id')
-  async start(@Param('id') id: string) {
-    return await this.startTimerUseCase.startTimer(id);
+  @Put('start/:timerId')
+  @UseInterceptors(
+    new ZodValidationInterceptor({
+      paramsSchema: startTimerSchema,
+    }),
+  )
+  async start(
+    @Headers('x-tenant-code') tenantCode: string,
+    @Param('timerId') timerId: string,
+  ) {
+    return await this.startTimerUseCase.startTimer({ tenantCode, timerId });
   }
 
-  @Put('stop/:id')
-  async pause(@Param('id') id: string) {
-    return await this.pauseTimerUseCase.pauseTimer(id);
+  @Put('stop/:timerId')
+  @UseInterceptors(
+    new ZodValidationInterceptor({
+      paramsSchema: pauseTimerSchema,
+    }),
+  )
+  async pause(
+    @Headers('x-tenant-code') tenantCode: string,
+    @Param('timerId') timerId: string,
+  ) {
+    return await this.pauseTimerUseCase.pauseTimer({
+      tenantCode,
+      timerId,
+    });
   }
 }

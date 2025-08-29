@@ -18,6 +18,7 @@ import {
 } from '../application';
 import { ZodValidationInterceptor } from 'src/main/interceptors';
 import { z } from 'zod';
+import { tenantValidationInterceptor } from './interceptors';
 
 const createSessionSchema = z.object({
   customerId: z.string().optional(),
@@ -38,13 +39,7 @@ type EndSessionParams = z.infer<typeof endSessionParamsSchema>;
 type EndSessionBody = z.infer<typeof endSessionBodySchema>;
 
 @Controller('sessions')
-@UseInterceptors(
-  new ZodValidationInterceptor({
-    headerSchema: z.object({
-      'x-tenant-code': z.string(),
-    }),
-  }),
-)
+@UseInterceptors(tenantValidationInterceptor)
 export class SessionsController {
   constructor(
     private readonly getSessionsUseCase: GetSessionsUseCase,

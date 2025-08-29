@@ -10,7 +10,13 @@ import {
   NoActiveExecutionBlockException,
 } from '../exceptions';
 
-export const timerStatuses = ['CREATED', 'RUNNING', 'PAUSED', 'COMPLETED', 'CANCELED'] as const;
+export const timerStatuses = [
+  'CREATED',
+  'RUNNING',
+  'PAUSED',
+  'COMPLETED',
+  'CANCELED',
+] as const;
 
 export type TimerStatus = (typeof timerStatuses)[number];
 
@@ -86,7 +92,10 @@ export class Timer extends Entity<TimerProps> {
 
   private calculateTotalElapsed(): number {
     return this.props.history.reduce((acc, block) => {
-      const blockElapsed = block.end && block.elapsed ? block.elapsed : Date.now() - block.start.getTime();
+      const blockElapsed =
+        block.end && block.elapsed
+          ? block.elapsed
+          : Date.now() - block.start.getTime();
       return acc + blockElapsed;
     }, 0);
   }
@@ -98,7 +107,10 @@ export class Timer extends Entity<TimerProps> {
       openBlock = now.getTime() - this.lastStartedAt.getTime();
     }
 
-    const closedBlocks = this.history.reduce((acc, block) => acc + (block.end ? block.elapsed : 0), 0);
+    const closedBlocks = this.history.reduce(
+      (acc, block) => acc + (block.end ? block.elapsed : 0),
+      0,
+    );
 
     this.props.elapsed = closedBlocks + openBlock;
     this.props.remaining = this.duration - this.props.elapsed;
@@ -184,6 +196,7 @@ export class Timer extends Entity<TimerProps> {
   public static createNew(session: Session, durationMinutes: number): Timer {
     const timer = this.create({
       tenantId: session.tenantId,
+      tenant: session.tenant,
       sessionId: session.id,
       session,
       duration: durationMinutes * 1000 * 60,

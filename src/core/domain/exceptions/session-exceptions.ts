@@ -5,3 +5,9 @@ export class SessionNotFoundException extends HttpException {
     super('Session not found', HttpStatus.NOT_FOUND);
   }
 }
+
+export class SessionHasActiveTimerException extends HttpException {
+  constructor() {
+    super('Session has an active timer', HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+}

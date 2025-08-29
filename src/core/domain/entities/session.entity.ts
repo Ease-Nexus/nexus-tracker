@@ -2,6 +2,7 @@ import { Entity } from 'src/shared/domain';
 import { Tenant } from './tenant.entity';
 import { Badge } from './badge.entity';
 import { Customer } from './customer.entity';
+import { Timer } from './timer.entity';
 
 export interface SessionProps {
   tenantId: string;
@@ -10,6 +11,7 @@ export interface SessionProps {
   customer?: Customer;
   badgeId: string;
   badge?: Badge;
+  timer?: Timer;
   startedAt?: Date;
   endedAt?: Date;
 }
@@ -40,6 +42,10 @@ export class Session extends Entity<SessionProps> {
 
   get badge(): Badge | undefined {
     return this.props.badge;
+  }
+
+  get timer(): Timer | undefined {
+    return this.props.timer;
   }
 
   get startedAt(): Date | undefined {

@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 
 import { Timer } from '../domain';
 import { TimerGateway } from './timer.gateway';
@@ -46,7 +51,8 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
         if (t.session) {
           await this.endSessionUseCase.end({
             id: t.session?.id,
-            tenantId: t.tenantId,
+            tenant: t.tenant,
+            tenantCode: t.tenant?.code ?? '',
           });
         }
 
@@ -82,7 +88,8 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
         if (timer.session) {
           await this.endSessionUseCase.end({
             id: timer.session?.id,
-            tenantId: timer.tenantId,
+            tenant: timer.tenant,
+            tenantCode: timer.tenant?.code ?? '',
           });
         }
 
@@ -97,7 +104,9 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.loop = setInterval(() => void this.tick(), TICK_MS);
-    this.logger.log(`Timer loop started: tick=${TICK_MS}ms flush>=${FLUSH_MS}ms`);
+    this.logger.log(
+      `Timer loop started: tick=${TICK_MS}ms flush>=${FLUSH_MS}ms`,
+    );
   }
 
   onModuleDestroy() {

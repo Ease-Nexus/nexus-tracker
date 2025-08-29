@@ -22,7 +22,7 @@ import { z } from 'zod';
 const createSessionSchema = z.object({
   customerId: z.string().optional(),
   badgeValue: z.string(),
-  duration: z.number().min(0.2),
+  duration: z.number().min(0.01),
   startImmediately: z.boolean().optional(),
 });
 

@@ -1,4 +1,4 @@
 export * from './badge-exceptions';
 export * from './timer-exceptions';
 export * from './tenant-exceptions';
-export * from './seession-exceptions';
+export * from './session-exceptions';

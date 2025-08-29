@@ -1,19 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { SessionsEndParams } from 'src/core/domain';
-import { DrizzleSessionRepository } from 'src/shared';
+import { Injectable } from '@nestjs/common';
+import {
+  SessionHasActiveTimerException,
+  SessionNotFoundException,
+  SessionsEndParams,
+  Tenant,
+  TenantNotFoundException,
+} from 'src/core/domain';
+import {
+  DrizzleSessionRepository,
+  DrizzleTenantRepository,
+} from 'src/shared/database';
+import { CompleteTimerUsecase } from '../timers/complete-timer.usecase';
 
 @Injectable()
 export class EndSessionUsecase {
-  constructor(private readonly sessionRepository: DrizzleSessionRepository) {}
+  constructor(
+    private readonly tenantRepository: DrizzleTenantRepository,
+    private readonly sessionRepository: DrizzleSessionRepository,
+    private readonly completeTimerUseCase: CompleteTimerUsecase,
+  ) {}
 
-  async end({ tenantId: tenantCode, id }: SessionsEndParams) {
+  private async validateTenant({
+    tenantCode,
+    tenant,
+  }: SessionsEndParams): Promise<Tenant> {
+    if (tenant) return tenant;
+
+    const tenantResult = await this.tenantRepository.getByCode(tenantCode);
+
+    if (!tenantResult) {
+      throw new TenantNotFoundException();
+    }
+
+    return tenantResult;
+  }
+
+  async end(params: SessionsEndParams) {
+    const tenant = await this.validateTenant(params);
+
+    const { id, forceCompleteTimer } = params;
+
     const session = await this.sessionRepository.getById({
-      tenantId: tenantCode,
+      tenantId: tenant.id,
       id,
     });
 
     if (!session) {
-      throw new NotFoundException('Session not foundd');
+      throw new SessionNotFoundException();
+    }
+
+    if (session.timer && !session.timer.isCompleted() && forceCompleteTimer) {
+      await this.completeTimerUseCase.complete(session.timer.id);
+    }
+
+    if (!session.timer?.isCompleted()) {
+      throw new SessionHasActiveTimerException();
     }
 
     session.end();

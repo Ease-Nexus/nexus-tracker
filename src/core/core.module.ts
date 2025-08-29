@@ -5,6 +5,7 @@ import { CreateSessionUsecase } from './application/commands/sessions/create-ses
 
 import { DatabaseModule } from 'src/shared/database';
 import {
+  CompleteTimerUsecase,
   CreateTimerUseCase,
   EndSessionUsecase,
   GetSessionByIdUsecase,
@@ -19,17 +20,21 @@ import { TimersController } from './api';
 @Module({
   imports: [DatabaseModule],
   providers: [
+    // Infrastructure
     TimerGateway,
+    TimerSchedulerService,
+    // Session
     GetSessionsUseCase,
     GetSessionByIdUsecase,
     CreateSessionUsecase,
     EndSessionUsecase,
-    TimerSchedulerService,
+
+    // Timer
+    GetTimersUseCase,
     CreateTimerUseCase,
     StartTimerUseCase,
     PauseTimerUseCase,
-    CreateSessionUsecase,
-    GetTimersUseCase,
+    CompleteTimerUsecase,
   ],
   controllers: [SessionsController, TimersController],
 })

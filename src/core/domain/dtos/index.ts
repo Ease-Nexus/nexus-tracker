@@ -1,2 +1,2 @@
 export * from './session.dto';
-export * from './timer-result.dto';
+export * from './timers.dto';

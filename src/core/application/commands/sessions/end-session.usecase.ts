@@ -50,7 +50,11 @@ export class EndSessionUsecase {
     }
 
     if (session.timer && !session.timer.isCompleted() && forceCompleteTimer) {
-      await this.completeTimerUseCase.complete(session.timer.id);
+      await this.completeTimerUseCase.complete({
+        tenant,
+        tenantCode: tenant.code,
+        timerId: session.timer.id,
+      });
     }
 
     if (!session.timer?.isCompleted()) {

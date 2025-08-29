@@ -1,5 +1,12 @@
-import { Timer, TimerStatus } from '../entities';
+import { Tenant, Timer, TimerStatus } from '../entities';
 
+export interface TimerStateManagementUsecaseDto {
+  tenant?: Tenant;
+  tenantCode: string;
+  timerId: string;
+}
+
+// Result
 export interface HistoryDto {
   startedAt: Date;
   endedAt?: Date;

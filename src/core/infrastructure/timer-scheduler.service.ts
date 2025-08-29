@@ -11,7 +11,7 @@ import { DrizzleTimerRepository } from 'src/shared/database';
 import { EndSessionUsecase } from '../application/commands/sessions/end-session.usecase';
 
 const TICK_MS = 500; // frequência de cálculo/WS
-const FLUSH_MS = 500; // frequência mínima de persistência
+const FLUSH_MS = 1000; // frequência mínima de persistência
 
 @Injectable()
 export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {

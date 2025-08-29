@@ -1,23 +1,34 @@
 import { Timer } from 'src/core';
-import { timersTable } from '../../drizzle-setup';
+import { sessionsTable, tenantsTable, timersTable } from '../../drizzle-setup';
+import { TenantMapper } from './tenant-mapper';
+import { SessionMapper } from './session-mapper';
 
-export type TimerPersistence = typeof timersTable.$inferSelect;
+export type TimerPersistence = {
+  timer: typeof timersTable.$inferSelect;
+  tenant?: typeof tenantsTable.$inferSelect;
+  session?: typeof sessionsTable.$inferSelect;
+};
 
 export class TimerMapper {
-  static toDomain(timer: TimerPersistence) {
-    return Timer.create({
-      tenantId: timer.tenantId,
-      sessionId: timer.sessionId,
-      duration: timer.duration,
-      elapsed: timer.elapsed,
-      status: timer.status,
-      lastStartedAt: timer.lastStartedAt ?? undefined,
-      startedAt: timer.startedAt ?? undefined,
-      history: timer.history.map((h) => ({
-        start: new Date(h.start),
-        end: h.end ? new Date(h.end) : undefined,
-        elapsed: h.elapsed,
-      })),
-    });
+  static toDomain({ timer, session, tenant }: TimerPersistence): Timer {
+    return Timer.create(
+      {
+        tenantId: timer.tenantId,
+        sessionId: timer.sessionId,
+        duration: timer.duration,
+        elapsed: timer.elapsed,
+        history: timer.history.map((h) => ({
+          start: new Date(h.start),
+          end: h.end ? new Date(h.end) : undefined,
+          elapsed: h.elapsed,
+        })),
+        status: timer.status,
+        startedAt: timer.startedAt ?? undefined,
+        lastStartedAt: timer.lastStartedAt ?? undefined,
+        tenant: tenant ? TenantMapper.toDomain({ tenant }) : undefined,
+        session: session ? SessionMapper.toDomain({ session }) : undefined, // Handle optional session data
+      },
+      timer.id,
+    );
   }
 }

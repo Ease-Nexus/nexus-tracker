@@ -1,9 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, inArray, SQL, sql } from 'drizzle-orm';
+import { and, eq, inArray, SQL, sql } from 'drizzle-orm';
 
 import { Session, Tenant, Timer, TimerStatus } from 'src/core/domain';
 import { DRIZLE_DB, type DrizzleDatabase } from '../drizzle-setup';
-import { sessionsTable, tenantsTable, timersTable } from '../drizzle-setup/schema';
+import {
+  sessionsTable,
+  tenantsTable,
+  timersTable,
+} from '../drizzle-setup/schema';
+import { TimerMapper } from './mappers';
+
+interface GetTimerByIdRepositoryParams {
+  tenantId: string;
+  timerId: string;
+}
 
 @Injectable()
 export class DrizzleTimerRepository {
@@ -63,40 +73,35 @@ export class DrizzleTimerRepository {
     );
   }
 
-  async getById(timerId: string): Promise<Timer> {
-    const [row] = await this.db
-      .select()
+  async getById({
+    timerId,
+    tenantId,
+  }: GetTimerByIdRepositoryParams): Promise<Timer | undefined> {
+    const rows = await this.db
+      .select({
+        tenant: tenantsTable,
+        timer: timersTable,
+        session: sessionsTable,
+      })
       .from(timersTable)
       .innerJoin(tenantsTable, eq(timersTable.tenantId, tenantsTable.id))
-      .where(eq(timersTable.id, timerId))
+      .innerJoin(sessionsTable, eq(timersTable.sessionId, sessionsTable.id))
+      .where(
+        and(eq(timersTable.tenantId, tenantId), eq(timersTable.id, timerId)),
+      )
       .execute();
 
-    const { tenants, timers } = row;
+    if (rows?.length === 0) {
+      return undefined;
+    }
 
-    return Timer.create(
-      {
-        tenantId: tenants.code,
-        tenant: Tenant.create({
-          code: tenants.code,
-          name: tenants.name,
-          contactInfo: tenants.contactInfo ?? undefined,
-          description: tenants.description ?? undefined,
-          createdAt: tenants.createdAt,
-        }),
-        sessionId: timers.sessionId,
-        duration: timers.duration,
-        elapsed: timers.elapsed,
-        history: timers.history.map((h) => ({
-          start: new Date(h.start),
-          end: h.end ? new Date(h.end) : undefined,
-          elapsed: h.elapsed,
-        })),
-        status: timers.status,
-        startedAt: timers.startedAt ?? undefined,
-        lastStartedAt: timers.lastStartedAt ?? undefined,
-      },
-      timers.id,
-    );
+    const { tenant, timer, session } = rows[0];
+
+    return TimerMapper.toDomain({
+      tenant,
+      timer,
+      session,
+    });
   }
 
   async create(timer: Timer): Promise<void> {
@@ -119,7 +124,7 @@ export class DrizzleTimerRepository {
     await this.db
       .update(timersTable)
       .set({
-        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.code} = ${timer.tenantId})`,
+        tenantId: sql`(SELECT id FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${timer.tenantId})`,
         sessionId: timer.sessionId,
         duration: timer.duration,
         elapsed: timer.elapsed,
